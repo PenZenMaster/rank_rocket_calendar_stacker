@@ -53,5 +53,10 @@ config.py
 *.tmp
 *.bak
 *~
+#Compressed files
+*.zip
+*.tar.gz
+*.rar
+*.7z
 
 
