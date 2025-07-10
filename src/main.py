@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory
-from src.models.user import db
+from src.extensions import db
 from src.models.client import Client, OAuthCredential, EventCache
 from src.routes.user import user_bp
 from src.routes.client import client_bp

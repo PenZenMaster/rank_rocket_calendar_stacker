@@ -330,3 +330,220 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
+
+// OAuth Credentials Management
+function showOAuthModal(oauthId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('oauthModal'));
+    const modalTitle = document.getElementById('oauthModalTitle');
+    const form = document.getElementById('oauthForm');
+    
+    // Reset form
+    form.reset();
+    document.getElementById('oauthId').value = '';
+    
+    // Load clients for the dropdown
+    loadClientsForOAuth();
+    
+    if (oauthId) {
+        modalTitle.textContent = 'Edit OAuth Credentials';
+        loadOAuthCredential(oauthId);
+    } else {
+        modalTitle.textContent = 'Add OAuth Credentials';
+        // Set default scopes
+        document.getElementById('oauthScopes').value = 'https://www.googleapis.com/auth/calendar\nhttps://www.googleapis.com/auth/calendar.events';
+    }
+    
+    modal.show();
+}
+
+function loadClientsForOAuth() {
+    fetch('/api/clients')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('oauthClientSelect');
+            select.innerHTML = '<option value="">Select a client...</option>';
+            
+            if (data.success && data.data) {
+                data.data.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = `${client.name} (${client.email})`;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading clients:', error);
+            showAlert('Error loading clients', 'danger');
+        });
+}
+
+function loadOAuthCredential(oauthId) {
+    // This would load existing OAuth credential data for editing
+    // For now, we'll implement the basic structure
+    document.getElementById('oauthId').value = oauthId;
+}
+
+function saveOAuthCredentials() {
+    const form = document.getElementById('oauthForm');
+    const formData = new FormData(form);
+    
+    const oauthData = {
+        client_id: document.getElementById('oauthClientSelect').value,
+        google_client_id: document.getElementById('googleClientId').value,
+        google_client_secret: document.getElementById('googleClientSecret').value,
+        scopes: document.getElementById('oauthScopes').value.replace(/\n/g, ',')
+    };
+    
+    // Validate required fields
+    if (!oauthData.client_id || !oauthData.google_client_id || !oauthData.google_client_secret) {
+        showAlert('Please fill in all required fields', 'danger');
+        return;
+    }
+    
+    const oauthId = document.getElementById('oauthId').value;
+    const url = oauthId ? `/api/oauth/${oauthId}` : '/api/oauth';
+    const method = oauthId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(oauthData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message || 'OAuth credentials saved successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('oauthModal')).hide();
+            loadOAuthCredentials();
+        } else {
+            showAlert(data.error || 'Error saving OAuth credentials', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving OAuth credentials:', error);
+        showAlert('Error saving OAuth credentials', 'danger');
+    });
+}
+
+function loadOAuthCredentials() {
+    fetch('/api/oauth')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('oauthTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.success && data.data && data.data.length > 0) {
+                data.data.forEach(oauth => {
+                    const row = document.createElement('tr');
+                    
+                    // Get client name (we'll need to fetch this or include it in the response)
+                    const clientName = oauth.client_name || 'Unknown Client';
+                    
+                    // Format token status
+                    let tokenStatus = 'No Token';
+                    let statusClass = 'secondary';
+                    if (oauth.access_token) {
+                        if (oauth.token_expires_at) {
+                            const expiresAt = new Date(oauth.token_expires_at);
+                            const now = new Date();
+                            if (expiresAt > now) {
+                                tokenStatus = 'Valid';
+                                statusClass = 'success';
+                            } else {
+                                tokenStatus = 'Expired';
+                                statusClass = 'warning';
+                            }
+                        } else {
+                            tokenStatus = 'Valid';
+                            statusClass = 'success';
+                        }
+                    }
+                    
+                    // Format expiration date
+                    const expiresAt = oauth.token_expires_at ? 
+                        new Date(oauth.token_expires_at).toLocaleString() : 
+                        'N/A';
+                    
+                    row.innerHTML = `
+                        <td>${clientName}</td>
+                        <td>${oauth.google_client_id}</td>
+                        <td><span class="badge bg-${statusClass}">${tokenStatus}</span></td>
+                        <td>${expiresAt}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="authorizeOAuth('${oauth.id}')" title="Authorize">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="showOAuthModal('${oauth.id}')" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOAuthCredentials('${oauth.id}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No OAuth credentials found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading OAuth credentials:', error);
+            showAlert('Error loading OAuth credentials', 'danger');
+        });
+}
+
+function authorizeOAuth(oauthId) {
+    fetch(`/api/oauth/${oauthId}/authorize`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Open the authorization URL in a new window
+            window.open(data.data.authorization_url, 'oauth_window', 'width=600,height=600');
+            showAlert('Authorization window opened. Please complete the OAuth flow.', 'info');
+        } else {
+            showAlert(data.error || 'Error initiating OAuth authorization', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error authorizing OAuth:', error);
+        showAlert('Error initiating OAuth authorization', 'danger');
+    });
+}
+
+function deleteOAuthCredentials(oauthId) {
+    if (confirm('Are you sure you want to delete these OAuth credentials?')) {
+        fetch(`/api/oauth/${oauthId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message || 'OAuth credentials deleted successfully', 'success');
+                loadOAuthCredentials();
+            } else {
+                showAlert(data.error || 'Error deleting OAuth credentials', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting OAuth credentials:', error);
+            showAlert('Error deleting OAuth credentials', 'danger');
+        });
+    }
+}
+
+// Update the showSection function to load OAuth credentials when the oauth section is shown
+const originalShowSection = showSection;
+showSection = function(sectionName) {
+    originalShowSection(sectionName);
+    
+    if (sectionName === 'oauth') {
+        loadOAuthCredentials();
+    }
+};
+

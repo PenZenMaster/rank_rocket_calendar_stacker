@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+
+# Virtual environment
+virtualenv/
+virt/
+venc/
+venv/
+env/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Flask specific
+instance/
+.flaskenv
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Sensitive files (e.g., OAuth credentials, configuration files)
+client_secret.json
+token.json
+config.py
+*.env
+
+# Compiled output
+/dist/
+/build/
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+/htmlcov/
+
+# Other temporary files
+*.tmp
+*.bak
+*~
+
+

@@ -1,5 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy()
+from src.extensions import db
 from datetime import datetime
 import uuid
 
