@@ -59,4 +59,5 @@ config.py
 *.rar
 *.7z
 
-
+# All the super secret stuff
+.env

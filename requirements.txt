@@ -6,6 +6,8 @@ click==8.2.1
 Flask==3.1.1
 flask-cors==6.0.0
 Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.4
+python-dotenv==1.0.0
 google-api-core==2.25.1
 google-api-python-client==2.176.0
 google-auth==2.40.3
