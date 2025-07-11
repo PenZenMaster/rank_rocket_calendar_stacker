@@ -27,7 +27,7 @@ def create_app():
 
     # Register blueprints with new URL prefixes
     app.register_blueprint(user_bp, url_prefix="/api/users")
-    app.register_blueprint(client_bp, url_prefix="/api/clients")
+    app.register_blueprint(client_bp, url_prefix="/api")
 
     # Create database tables if they don't exist
     # with app.app_context():
