@@ -1,7 +1,3 @@
-Here’s a structured “battle plan” mapped directly to the phases and deliverables in your Project Plan, aligned to the code you’ve already uploaded. We’ll break it into three major phases—with concrete tasks, target files/modules, and success criteria.
-
----
-
 ## Phase 1: MVP Development (Weeks 1–4)&#x20;
 
 ### Week 1 – Project Setup & Core Infrastructure
@@ -149,4 +145,66 @@ Here’s a structured “battle plan” mapped directly to the phases and delive
 * **Performance**: 95% of API calls <2 s; error rate <1%.
 * **Adoption**: User on-boarding completion >90%; task completion <30 s .
 
-Let’s kick off Phase 1 by finalizing the repository structure and wrapping up the CRUD endpoints for clients—then we’ll move straight into OAuth integration. Ready to deploy this plan?
+# Calendar Stacker Project Plan (Updated 2025-07-15)
+
+## ✅ Completed (Week 2)
+
+### Backend
+
+* Fully implemented **CRUD API** for Clients in `src/routes/client.py`:
+
+  * `GET /api/clients`
+  * `POST /api/clients`
+  * `PUT /api/clients/<id>`
+  * `DELETE /api/clients/<id>`
+* Added validation logic for name/email
+* Verified that all endpoints properly commit to the DB
+* Added `GET /api/clients/<client_id>/calendars` to list calendars using `GoogleCalendarService`
+
+  * Injected `OAuthCredential` properly
+  * Correctly passed `google_account_email` and/or credential object depending on implementation
+
+### Debugging
+
+* Fixed incorrect constructor usage for `GoogleCalendarService`
+* Resolved Pylance false-positives related to:
+
+  * missing parameters (`google_account_email`, `oauth_credentials`)
+  * unresolvable imports
+
+### Code Quality
+
+* File headers standardized per coding guidelines
+* Semantic versioning and modification timestamps applied to `client.py`
+
+---
+
+## Next Session (Week 3)
+
+### OAuth Integration Foundation
+
+* Implement OAuth CRUD routes in `src/routes/oauth.py`
+* Add modal/form in UI to input Google OAuth credentials
+* Enable Google consent flow (initiate + callback handler)
+* Store access/refresh tokens securely in DB
+* Mark OAuth record as `is_valid=True` after token exchange
+
+### Tasks
+
+* Scaffold `OAuthCredential` model if not already defined
+* Register and test new OAuth blueprint
+* Begin integration testing for full OAuth handshake
+
+---
+
+## Tracking
+
+* **Current file:** `src/routes/client.py`
+* **Version:** 1.07
+* **Next target file:** `src/routes/oauth.py` and `src/models/oauth_credential.py`
+* **Environment:** Python 3.10+, Flask, SQLAlchemy, Google API client
+
+---
+
+**Let’s pick up with OAuth scaffolding and test credentials storage tomorrow.**
+
