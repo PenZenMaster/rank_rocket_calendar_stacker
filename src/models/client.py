@@ -1,69 +1,58 @@
-from logging.config import fileConfig
-import sys
-import os
+"""
+Module/Script Name: client.py
 
-from sqlalchemy import engine_from_config, pool
-from alembic import context
+Description:
+Defines the SQLAlchemy models for Client and OAuthCredential.
+"""
 
-# Add project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
+from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy.orm import relationship
 from src.extensions import db
 
-# Import models to register them with Flask-SQLAlchemy metadata
-import src.models.client  # registers Client, OAuthCredential, EventCache
 
-# Alembic Config object
-config = context.config
+class Client(db.Model):
+    """
+    Represents a client in the system. Each client can have associated
+    OAuth credentials.
+    """
 
-# Configure loggers
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    __tablename__ = "clients"
 
-# Use Flask-SQLAlchemy metadata for migrations
-target_metadata = db.metadata
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), unique=True, nullable=False)
 
-# Database URL (from alembic.ini)
-
-
-def run_migrations_offline():
-    """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+    # Establishes a one-to-many relationship to OAuthCredential.
+    # When a Client is deleted, its associated credentials are also deleted.
+    oauth_credentials = relationship(
+        "OAuthCredential",
+        back_populates="client",
+        cascade="all, delete-orphan",
+        lazy=True,
     )
 
-    with context.begin_transaction():
-        context.run_migrations()
+    def __repr__(self):
+        return f"<Client {self.name}>"
 
 
-def run_migrations_online():
-    """Run migrations in 'online' mode."""
-    from typing import cast, Dict, Any
+class OAuthCredential(db.Model):
+    """
+    Stores Google OAuth credentials associated with a specific client.
+    """
 
-    raw_section = config.get_section(config.config_ini_section)
-    section = cast(Dict[str, Any], raw_section or {})
+    __tablename__ = "oauth_credentials"
 
-    connectable = engine_from_config(
-        section,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    id = Column(Integer, primary_key=True)
+    # The foreign key links this credential back to a specific client.
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
+    google_client_id = Column(String(255), nullable=False)
+    google_client_secret = Column(String(255), nullable=False)
+    access_token = Column(String(500), nullable=True)
+    refresh_token = Column(String(500), nullable=True)
+    scopes = Column(String(1000), nullable=True)
 
-        with context.begin_transaction():
-            context.run_migrations()
+    # Establishes the many-to-one relationship back to the Client.
+    client = relationship("Client", back_populates="oauth_credentials")
 
-
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
+    def __repr__(self):
+        return f"<OAuthCredential for Client ID: {self.client_id}>"

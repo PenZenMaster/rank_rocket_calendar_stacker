@@ -1,35 +1,32 @@
 from logging.config import fileConfig
-import sys
-import os
 
-from sqlalchemy import engine_from_config, pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
-# Add project root to sys.path for imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from src.extensions import db  # type: ignore[import]
-
-# Import models: try package path, fallback to root-level module
-try:
-    from src.models.client import Client, OAuthCredential  # type: ignore[import]
-except ImportError:
-    from client import Client, OAuthCredential  # fallback if models are at project root
-
-# Alembic Config object
+# This is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
 config = context.config
 
-# Configure loggers
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Use Flask-SQLAlchemy metadata for migrations
-target_metadata = db.metadata
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+# In a Flask app, this is usually handled by the app context.
+# We will get it from the app factory we defined in alembic.ini
+from flask import current_app
 
-# Database URL is read from alembic.ini
+config.set_main_option(
+    "sqlalchemy.url", current_app.config.get("SQLALCHEMY_DATABASE_URI")
+)
+target_metadata = current_app.extensions["migrate"].db.metadata
 
 
-def run_migrations_offline():
+def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -43,24 +40,16 @@ def run_migrations_offline():
         context.run_migrations()
 
 
-def run_migrations_online():
+def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    from typing import cast, Dict, Any
-
-    raw_section = config.get_section(config.config_ini_section)
-    section = cast(Dict[str, Any], raw_section or {})
-
     connectable = engine_from_config(
-        section,
+        config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
