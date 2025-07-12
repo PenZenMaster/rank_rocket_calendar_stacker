@@ -9,10 +9,7 @@ from alembic import context
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.extensions import db  # type: ignore[import]
-
-# Explicitly import models so they are registered in metadata
-from src.models.client import Client  # type: ignore[import]
-from src.models.oauth import OAuthCredential  # type: ignore[import]
+from src.models.client import Client, OAuthCredential  # type: ignore[import]
 
 # Alembic Config object
 config = context.config
