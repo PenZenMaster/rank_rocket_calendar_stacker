@@ -9,7 +9,12 @@ from alembic import context
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.extensions import db  # type: ignore[import]
-from src.models.client import Client, OAuthCredential  # type: ignore[import]
+
+# Import models: try package path, fallback to root-level module
+try:
+    from src.models.client import Client, OAuthCredential  # type: ignore[import]
+except ImportError:
+    from client import Client, OAuthCredential  # fallback if models are at project root
 
 # Alembic Config object
 config = context.config
