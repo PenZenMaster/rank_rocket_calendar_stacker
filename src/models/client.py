@@ -1,105 +1,69 @@
+from logging.config import fileConfig
+import sys
+import os
+
+from sqlalchemy import engine_from_config, pool
+from alembic import context
+
+# Add project root to sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from src.extensions import db
-from datetime import datetime
-import uuid
+
+# Import models to register them with Flask-SQLAlchemy metadata
+import src.models.client  # registers Client, OAuthCredential, EventCache
+
+# Alembic Config object
+config = context.config
+
+# Configure loggers
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# Use Flask-SQLAlchemy metadata for migrations
+target_metadata = db.metadata
+
+# Database URL (from alembic.ini)
 
 
-class Client(db.Model):
-    __tablename__ = "clients"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-    google_account_email = db.Column(db.String(255), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+def run_migrations_offline():
+    """Run migrations in 'offline' mode."""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
     )
-    is_active = db.Column(db.Boolean, default=True)
 
-    # Relationship to OAuth credentials
-    oauth_credentials = db.relationship(
-        "OAuthCredential", backref="client", lazy=True, cascade="all, delete-orphan"
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online():
+    """Run migrations in 'online' mode."""
+    from typing import cast, Dict, Any
+
+    raw_section = config.get_section(config.config_ini_section)
+    section = cast(Dict[str, Any], raw_section or {})
+
+    connectable = engine_from_config(
+        section,
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
     )
 
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "name": self.name,
-            "email": self.email,
-            "google_account_email": self.google_account_email,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "is_active": self.is_active,
-        }
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+        )
 
-    def __repr__(self):
-        return f"<Client {self.name}>"
-
-    def __init__(self, name: str, email: str, google_account_email: str, **kwargs):
-        super().__init__(**kwargs)
-        self.name = name
-        self.email = email
-        self.google_account_email = google_account_email
+        with context.begin_transaction():
+            context.run_migrations()
 
 
-class OAuthCredential(db.Model):
-    __tablename__ = "oauth_credentials"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    client_id = db.Column(db.String(36), db.ForeignKey("clients.id"), nullable=False)
-    google_client_id = db.Column(db.String(255), nullable=False)
-    google_client_secret = db.Column(
-        db.Text, nullable=False
-    )  # Should be encrypted in production
-    access_token = db.Column(db.Text)  # Should be encrypted in production
-    refresh_token = db.Column(db.Text)  # Should be encrypted in production
-    token_expires_at = db.Column(db.DateTime)
-    scopes = db.Column(db.Text)  # JSON string of granted scopes
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    is_valid = db.Column(db.Boolean, default=True)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "client_id": self.client_id,
-            "google_client_id": self.google_client_id,
-            "token_expires_at": (
-                self.token_expires_at.isoformat() if self.token_expires_at else None
-            ),
-            "scopes": self.scopes,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "is_valid": self.is_valid,
-        }
-
-    def __repr__(self):
-        return f"<OAuthCredential for client {self.client_id}>"
-
-
-class EventCache(db.Model):
-    __tablename__ = "event_cache"
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    client_id = db.Column(db.String(36), db.ForeignKey("clients.id"), nullable=False)
-    google_event_id = db.Column(db.String(255), nullable=False)
-    calendar_id = db.Column(db.String(255), nullable=False)
-    event_data = db.Column(db.Text)  # JSON string of event details
-    last_synced = db.Column(db.DateTime, default=datetime.utcnow)
-    is_deleted = db.Column(db.Boolean, default=False)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "client_id": self.client_id,
-            "google_event_id": self.google_event_id,
-            "calendar_id": self.calendar_id,
-            "event_data": self.event_data,
-            "last_synced": self.last_synced.isoformat() if self.last_synced else None,
-            "is_deleted": self.is_deleted,
-        }
-
-    def __repr__(self):
-        return f"<EventCache {self.google_event_id}>"
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

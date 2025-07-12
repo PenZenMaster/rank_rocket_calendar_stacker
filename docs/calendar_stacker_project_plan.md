@@ -206,5 +206,71 @@
 
 ---
 
-**Let’s pick up with OAuth scaffolding and test credentials storage tomorrow.**
+# Calendar Stacker Project Plan (Updated 2025-07-15)
+
+## ✅ Completed to Date
+
+### Week 2 – Client Management & Preliminary Calendar
+
+* **Clients CRUD API** in `src/routes/client.py`: GET, POST, PUT, DELETE with full validation and tests.
+* **Client → Calendar endpoint**: `GET /api/clients/<client_id>/calendars` wired to `GoogleCalendarService`.
+* **Debug fixes**: constructor misuse, Pylance import errors.
+* **Code quality**: standardized file headers, semantic versioning, PR linting.
+
+### Week 3 (So Far) – OAuth Model & Migration Setup
+
+* **Model scaffolding**: `src/models/oauth.py` created for `OAuthCredential`.
+* **Package initializers**: added `src/__init__.py` and `src/models/__init__.py` for proper imports.
+* **VS Code config**: `.vscode/settings.json` set `python.analysis.extraPaths = ["./src"]`.
+* **Alembic environment**: patched `migrations/env.py` to import all models and use `db.metadata`.
+
+---
+
+## 🎯 Next Steps (Week 3 Continued)
+
+1. **Generate & Apply Migration**
+
+   * Run `alembic revision --autogenerate -m "Add OAuthCredential model"`
+   * Review generated script for `oauth_credentials` table and FK to `clients`
+   * Execute `alembic upgrade head` to apply
+
+2. **OAuth CRUD API** (`src/routes/oauth.py`)
+
+   * `POST /api/oauth` → create credential record
+   * `GET /api/oauth/<id>` → fetch by ID
+   * `PUT /api/oauth/<id>` → update client ID/secret & scopes
+   * `DELETE /api/oauth/<id>` → remove credentials
+   * Add unit tests for each endpoint (pytest + mocks)
+
+3. **OAuth Authorization Flow**
+
+   * `POST /api/oauth/<id>/authorize` → generate Google consent URL
+   * Callback route `/api/oauth/callback` → exchange code for tokens
+   * Store `access_token`, `refresh_token`, `expires_at`; set `is_valid = True`
+   * Handle token refresh logic in background or on-demand
+
+4. **Frontend OAuth Integration**
+
+   * Add OAuth modal in `index.html`: client selector, ID, Secret, Scopes
+   * Implement `saveOAuthCredentials()` & `authorizeOAuth()` in `app.js`
+   * Visual feedback via `showAlert()` for success/errors
+
+### Milestone: End of Week 3
+
+* OAuth model in DB
+* Full CRUD + authorization handshake working end-to-end
+* Automated tests covering API + migration
+
+---
+
+## 🗓️ Looking Ahead (Week 4)
+
+* **Event Management API** and calendar wrapper (`src/google_calendar.py`)
+* **Frontend calendar & event UI** (dropdowns, lists, modals)
+* **Integration testing** for workflows
+
+---
+
+**Onward to OAuth!** Let me know when you’re ready to scaffold the routes or mock the Google flow.
+
 

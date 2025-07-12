@@ -5,13 +5,14 @@ import os
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Add project root to sys.path
+# Add project root to sys.path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.extensions import db
-from src.models.base import Base
-from src.models.client import Client
-from src.models.oauth import OAuthCredential  # renamed for singular file name
+from src.extensions import db  # type: ignore[import]
+
+# Explicitly import models so they are registered in metadata
+from src.models.client import Client  # type: ignore[import]
+from src.models.oauth import OAuthCredential  # type: ignore[import]
 
 # Alembic Config object
 config = context.config
@@ -20,11 +21,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# SQLAlchemy metadata
-target_metadata = Base.metadata
+# Use Flask-SQLAlchemy metadata for migrations
+target_metadata = db.metadata
 
-# Database URL (optional if set via alembic.ini)
-# config.set_main_option("sqlalchemy.url", "sqlite:///src/app.db")
+# Database URL is read from alembic.ini
 
 
 def run_migrations_offline():
@@ -43,7 +43,11 @@ def run_migrations_offline():
 
 def run_migrations_online():
     """Run migrations in 'online' mode."""
-    section = config.get_section(config.config_ini_section) or {}
+    from typing import cast, Dict, Any
+
+    raw_section = config.get_section(config.config_ini_section)
+    section = cast(Dict[str, Any], raw_section or {})
+
     connectable = engine_from_config(
         section,
         prefix="sqlalchemy.",
