@@ -61,3 +61,6 @@ config.py
 
 # All the super secret stuff
 .env
+
+# Files for Skippy
+dir.txt
