@@ -19,7 +19,8 @@ Comments:
 
 from flask import Blueprint, request, jsonify, abort
 from src.extensions import db
-from src.models.client import Client, OAuthCredential
+from src.models.client import Client
+from src.models.oauth import OAuthCredential
 from src.google_calendar import GoogleCalendarService
 
 client_bp = Blueprint("client_bp", __name__)
@@ -51,9 +52,8 @@ def create_client():
     google_account_email = data.get("google_account_email", "").strip()
     if not google_account_email or "@" not in google_account_email:
         abort(400, description="Valid 'google_account_email' is required.")
-    new_client = Client(
-        name=name, email=email, google_account_email=google_account_email
-    )
+    new_client = Client(name=name, email=email)
+
     db.session.add(new_client)
     db.session.commit()
     return jsonify(new_client.to_dict()), 201

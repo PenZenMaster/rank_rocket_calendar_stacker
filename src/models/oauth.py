@@ -11,13 +11,14 @@ Created Date:
 13-07-2025
 
 Last Modified Date:
-13-07-2025
+14-07-2025
 
 Version:
-v1.02
+v1.03
 
 Comments:
-- Added extend_existing=True to avoid duplicate table definition error
+- Added relationship back_populates with Client
+- Ensured unique class registration
 """
 
 from datetime import datetime
@@ -37,6 +38,10 @@ class OAuthCredential(db.Model):
     refresh_token = db.Column(db.Text)
     expires_at = db.Column(db.DateTime)
     is_valid = db.Column(db.Boolean, default=False)
+
+    client = db.relationship(
+        "src.models.client.Client", back_populates="oauth_credentials"
+    )
 
     def __init__(self, **kwargs):
         """Dynamic constructor supporting dict-style input."""

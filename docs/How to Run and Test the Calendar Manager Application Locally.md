@@ -150,11 +150,3 @@ total number of clients updated based on your additions/deletions.
 
 By following this guide, you should have a functional local instance of the `calendar-manager` application. This MVP provides a solid foundation for further development, including the full integration with the Google Calendar API for event management and robust OAuth credential handling. You can now begin to explore the codebase, implement new features, and contribute to the project.
 
----
-
-**Document Information**
-- Author: Manus AI
-- Version: 1.0
-- Date: July 9, 2025
-- Document Type: Local Setup and Testing Guide
-

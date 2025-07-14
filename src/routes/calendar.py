@@ -18,7 +18,7 @@ Comments:
 """
 
 from flask import Blueprint, request, jsonify, abort
-from src.models.client import OAuthCredential
+from src.models.oauth import OAuthCredential
 from src.google_calendar import GoogleCalendarService
 
 calendar_bp = Blueprint("calendar", __name__)

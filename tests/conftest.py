@@ -11,13 +11,14 @@ Created Date:
 13-07-2025
 
 Last Modified Date:
-13-07-2025
+14-07-2025
 
 Version:
-v1.04
+v1.05
 
 Comments:
-- Switched app fixture to use TestingConfig directly (Option B)
+- Moved clear_mappers() to post-yield teardown
+- Added db.session.remove() and db.drop_all() after yield
 """
 
 import pytest
@@ -25,33 +26,31 @@ from sqlalchemy.orm import clear_mappers, configure_mappers
 
 from src.extensions import db
 from src.main import create_app
-from src.config.testing import TestingConfig
+from src.config import TestingConfig
+from src.models.client import Client, OAuthCredential  # ✅ Import class directly
 
 
 @pytest.fixture(scope="session")
 def app():
-    app = create_app(TestingConfig)
-    return app
+    return create_app(TestingConfig)
 
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_db(app):
     """Ensure test database is reset and mappers configured for each test"""
-    clear_mappers()
-
     with app.app_context():
         db.drop_all()
         db.create_all()
-
-        # Import models after db is reinitialized
-        from src.models.client import Client
-        from src.models.oauth import OAuthCredential
-
         configure_mappers()
 
-        # Insert test client
-        test_client = Client(name="Test Client")
+        # ✅ Insert test client
+        test_client = Client(name="Test Client", email="test@example.com")
         db.session.add(test_client)
         db.session.commit()
 
         yield
+
+        # ✅ Teardown
+        db.session.remove()
+        db.drop_all()
+        clear_mappers()
