@@ -1,46 +1,57 @@
-# GitHub Actions CI for Calendar Stacker
+"""
+Module/Script Name: conftest.py
 
-name: Run Tests
+Description:
+Pytest fixtures for Flask app and test database, properly resetting SQLAlchemy mappings.
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+Author(s):
+Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+Created Date:
+13-07-2025
 
-    steps:
-    - uses: actions/checkout@v3
+Last Modified Date:
+13-07-2025
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.10
+Version:
+v1.04
 
-    - name: Install dependencies
-      run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
+Comments:
+- Switched app fixture to use TestingConfig directly (Option B)
+"""
 
-    - name: Run Pytest with coverage
-      run: |
-        source venv/bin/activate
-        pytest --cov=src --cov-report=term-missing
+import pytest
+from sqlalchemy.orm import clear_mappers, configure_mappers
+
+from src.extensions import db
+from src.main import create_app
+from src.config.testing import TestingConfig
+
+
+@pytest.fixture(scope="session")
+def app():
+    app = create_app(TestingConfig)
+    return app
+
+
+@pytest.fixture(scope="function", autouse=True)
+def setup_db(app):
+    """Ensure test database is reset and mappers configured for each test"""
+    clear_mappers()
+
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+
+        # Import models after db is reinitialized
+        from src.models.client import Client
+        from src.models.oauth import OAuthCredential
+
+        configure_mappers()
+
+        # Insert test client
+        test_client = Client(name="Test Client")
+        db.session.add(test_client)
+        db.session.commit()
+
+        yield

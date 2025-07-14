@@ -14,10 +14,10 @@ Last Modified Date:
 13-07-2025
 
 Version:
-v1.01
+v1.02
 
 Comments:
-- Added __init__ and to_dict for route compatibility
+- Added extend_existing=True to avoid duplicate table definition error
 """
 
 from datetime import datetime
@@ -26,6 +26,7 @@ from src.extensions import db
 
 class OAuthCredential(db.Model):
     __tablename__ = "oauth_credentials"
+    __table_args__ = {"extend_existing": True}  # Prevent duplicate table error in tests
 
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=False)
