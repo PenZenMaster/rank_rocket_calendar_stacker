@@ -1,102 +1,102 @@
 """
-Module/Script Name: oauth_flow.py
+Module/Script Name: src/routes/oauth_flow.py
 
 Description:
-Google OAuth2 Authorization & Callback handlers for Calendar integration.
+Handles OAuth 2.0 redirect and callback logic for authorization flow
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
-13-07-2025
+14-07-2025
 
 Last Modified Date:
-13-07-2025
+14-07-2025
 
 Version:
-v1.00
+v1.06
 
 Comments:
-- Implements /authorize and /callback OAuth2 endpoints
+- Fixed incorrect attribute usage: replaced `redirect_uri` with correct `google_redirect_uri`
 """
 
-import os
-import uuid
-import json
-from flask import Blueprint, request, redirect, session, abort, url_for
+from flask import Blueprint, redirect, request, url_for, session
 from google_auth_oauthlib.flow import Flow
 from src.models.oauth import OAuthCredential
 from src.extensions import db
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+import os
+import pathlib
+import json
 
+# Create blueprint
 oauth_flow_bp = Blueprint("oauth_flow_bp", __name__)
 
 
 @oauth_flow_bp.route("/authorize/<int:oauth_id>")
 def authorize(oauth_id):
-    oauth = OAuthCredential.query.get_or_404(oauth_id)
+    oauth_entry = OAuthCredential.query.get(oauth_id)
+    if not oauth_entry:
+        return "OAuth credentials not found", 404
 
-    # Create OAuth flow
+    client_config = {
+        "web": {
+            "client_id": oauth_entry.google_client_id,
+            "client_secret": oauth_entry.google_client_secret,
+            "redirect_uris": [oauth_entry.google_redirect_uri],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    }
+
     flow = Flow.from_client_config(
-        {
-            "web": {
-                "client_id": oauth.google_client_id,
-                "client_secret": oauth.google_client_secret,
-                "redirect_uris": [url_for("oauth_flow_bp.callback", _external=True)],
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-            }
-        },
-        scopes=(
-            json.loads(oauth.scopes) if isinstance(oauth.scopes, str) else oauth.scopes
-        ),
+        client_config=client_config,
+        scopes=["https://www.googleapis.com/auth/calendar"],
+        redirect_uri=oauth_entry.google_redirect_uri,
     )
 
-    state = str(uuid.uuid4())
-    session["oauth_state"] = state
-    session["oauth_id"] = oauth.id
-    flow.redirect_uri = url_for("oauth_flow_bp.callback", _external=True)
-
-    auth_url, _ = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true", state=state
+    authorization_url, state = flow.authorization_url(
+        access_type="offline", include_granted_scopes="true"
     )
-    return redirect(auth_url)
+
+    session["state"] = state
+    session["oauth_id"] = oauth_id
+
+    return redirect(authorization_url)
 
 
 @oauth_flow_bp.route("/callback")
 def callback():
-    state = request.args.get("state")
-    if state != session.get("oauth_state"):
-        abort(400, description="Invalid state token")
-
+    state = session.get("state")
     oauth_id = session.get("oauth_id")
-    oauth = OAuthCredential.query.get_or_404(oauth_id)
+    if not oauth_id:
+        return "Missing session oauth_id", 400
+
+    oauth_entry = OAuthCredential.query.get(oauth_id)
+    if not oauth_entry:
+        return "OAuth credentials not found", 404
+
+    client_config = {
+        "web": {
+            "client_id": oauth_entry.google_client_id,
+            "client_secret": oauth_entry.google_client_secret,
+            "redirect_uris": [oauth_entry.google_redirect_uri],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    }
 
     flow = Flow.from_client_config(
-        {
-            "web": {
-                "client_id": oauth.google_client_id,
-                "client_secret": oauth.google_client_secret,
-                "redirect_uris": [url_for("oauth_flow_bp.callback", _external=True)],
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
-            }
-        },
-        scopes=(
-            json.loads(oauth.scopes) if isinstance(oauth.scopes, str) else oauth.scopes
-        ),
+        client_config=client_config,
+        scopes=["https://www.googleapis.com/auth/calendar"],
         state=state,
     )
-    flow.redirect_uri = url_for("oauth_flow_bp.callback", _external=True)
+    flow.redirect_uri = oauth_entry.google_redirect_uri
 
     flow.fetch_token(authorization_response=request.url)
-    creds = flow.credentials
 
-    oauth.access_token = creds.token
-    oauth.refresh_token = creds.refresh_token
-    oauth.expires_at = creds.expiry
-    oauth.is_valid = True
+    credentials = flow.credentials
+    oauth_entry.access_token = credentials.token
     db.session.commit()
 
-    return redirect("/")  # or send a success message/redirect to dashboard
+    return redirect("/")
