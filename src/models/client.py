@@ -1,5 +1,5 @@
 """
-Module/Script Name: client.py
+Module/Script Name: src/models/client.py
 
 Description:
 SQLAlchemy model for Client entities, including name, email, and OAuth credential relationship.
@@ -14,10 +14,11 @@ Last Modified Date:
 14-07-2025
 
 Version:
-v1.05
+v1.08
 
 Comments:
-- Added to_dict() method for JSON serialization
+- Fully-qualified reference to OAuthCredential in relationship for SQLAlchemy mapping resolution
+- Registered oauth_bp in create_app without url_prefix to ensure OAuth routes are available at root level
 """
 
 from src.extensions import db

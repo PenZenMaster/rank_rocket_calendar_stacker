@@ -23,18 +23,19 @@ Comments:
 import pytest
 from flask import Flask
 from src.extensions import db
-from src.models.client import Client, OAuthCredential
+from src.models.client import Client
+from src.models.oauth import OAuthCredential
 
 
 def create_client(app):
-    client = Client(
-        name="Test Client",
-        email="client@test.com",
-        google_account_email="gacc@test.com",
-    )
-    db.session.add(client)
-    db.session.commit()
-    return client
+    """Create or retrieve test client to avoid unique constraint conflicts."""
+    with app.app_context():
+        client = Client.query.filter_by(email="test@example.com").first()
+        if not client:
+            client = Client(name="Test Client", email="test@example.com")
+            db.session.add(client)
+            db.session.commit()
+        return client
 
 
 @pytest.fixture

@@ -27,7 +27,7 @@ from src.models.oauth import OAuthCredential
 from src.extensions import db
 
 
-def test_authorize_redirect(client, init_database):
+def test_authorize_redirect(client, setup_db):
     # Setup test credential
     oauth = OAuthCredential(
         client_id=1,
@@ -53,7 +53,7 @@ def test_authorize_redirect(client, init_database):
         assert response.location.startswith("http://mock.google.auth")
 
 
-def test_callback_exchanges_token(client, init_database):
+def test_callback_exchanges_token(client, setup_db):
     oauth = OAuthCredential(
         client_id=1,
         google_client_id="test-google-client",

@@ -1,46 +1,40 @@
-"""
-Module/Script Name: main.py
+""" "
+Module/Script Name: src/main.py
 
 Description:
-Application entry point, app factory, and route registration
+Flask application factory and blueprint registration
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
-13-07-2025
+14-07-2025
 
 Last Modified Date:
-13-07-2025
+14-07-2025
 
 Version:
 v1.01
 
 Comments:
-- Registered oauth_flow_bp blueprint
+- Registered oauth_bp blueprint without url_prefix to expose routes at root level
+- Ensures tests can access routes like /authorize and /oauth_credentials directly
 """
 
 from flask import Flask
-from src.extensions import db, migrate
-from src.routes.client import client_bp
-from src.routes.calendar import calendar_bp
-from src.routes.user import user_bp
+from src.extensions import db
 from src.routes.oauth import oauth_bp
-from src.routes.oauth_flow import oauth_flow_bp
-from src.config import Config
 
 
-def create_app(config_class=Config):
+def create_app(config_obj="src.config.Config"):
     app = Flask(__name__)
-    app.config.from_object(config_class)
+    app.config.from_object(config_obj)
 
     db.init_app(app)
-    migrate.init_app(app, db)
+    with app.app_context():
+        db.create_all()
 
-    app.register_blueprint(client_bp)
-    app.register_blueprint(calendar_bp)
-    app.register_blueprint(user_bp)
+    # Register OAuth blueprint directly without a prefix for route accessibility
     app.register_blueprint(oauth_bp)
-    app.register_blueprint(oauth_flow_bp)
 
     return app

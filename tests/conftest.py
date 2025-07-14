@@ -2,7 +2,7 @@
 Module/Script Name: conftest.py
 
 Description:
-Pytest fixtures for Flask app and test database, properly resetting SQLAlchemy mappings.
+Pytest fixtures for Flask app and test database, plus test client definition.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
@@ -14,43 +14,40 @@ Last Modified Date:
 14-07-2025
 
 Version:
-v1.05
-
-Comments:
-- Moved clear_mappers() to post-yield teardown
-- Added db.session.remove() and db.drop_all() after yield
+v1.06
 """
 
 import pytest
-from sqlalchemy.orm import clear_mappers, configure_mappers
-
-from src.extensions import db
 from src.main import create_app
-from src.config import TestingConfig
-from src.models.client import Client, OAuthCredential  # ✅ Import class directly
+from src.extensions import db
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def app():
-    return create_app(TestingConfig)
+    app = create_app("src.config.TestingConfig")
+    yield app
 
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_db(app):
-    """Ensure test database is reset and mappers configured for each test"""
     with app.app_context():
         db.drop_all()
         db.create_all()
-        configure_mappers()
 
-        # ✅ Insert test client
+        # Models are loaded via src.models import in main.py
+
+        from src.models.client import Client
+
         test_client = Client(name="Test Client", email="test@example.com")
         db.session.add(test_client)
         db.session.commit()
 
         yield
 
-        # ✅ Teardown
         db.session.remove()
         db.drop_all()
-        clear_mappers()
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
