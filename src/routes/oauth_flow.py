@@ -14,18 +14,25 @@ Last Modified Date:
 14-07-2025
 
 Version:
-v1.06
+v1.08
 
 Comments:
+- Injected sys.path hook to support PYTHONPATH-relative imports from any test runner context
 - Fixed incorrect attribute usage: replaced `redirect_uri` with correct `google_redirect_uri`
+- Added `google_redirect_uri` to OAuthCredential model
+- Patched test setup in test_oauth_flow.py to include required field
 """
+
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 from flask import Blueprint, redirect, request, url_for, session
 from google_auth_oauthlib.flow import Flow
 from src.models.oauth import OAuthCredential
 from src.extensions import db
 
-import os
 import pathlib
 import json
 
