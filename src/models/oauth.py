@@ -1,5 +1,5 @@
 """
-Module/Script Name: oauth.py
+Module/Script Name: src/models/oauth.py
 
 Description:
 OAuthCredential SQLAlchemy model with JSON serialization support.
@@ -14,11 +14,10 @@ Last Modified Date:
 14-07-2025
 
 Version:
-v1.03
+v1.04
 
 Comments:
-- Added relationship back_populates with Client
-- Ensured unique class registration
+- Added missing field `google_redirect_uri` to match usage in routes and tests
 """
 
 from datetime import datetime
@@ -33,6 +32,7 @@ class OAuthCredential(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=False)
     google_client_id = db.Column(db.String(256), nullable=False)
     google_client_secret = db.Column(db.String(256), nullable=False)
+    google_redirect_uri = db.Column(db.String(512), nullable=False)  # NEW FIELD
     scopes = db.Column(db.Text, nullable=False)
     access_token = db.Column(db.Text)
     refresh_token = db.Column(db.Text)
@@ -49,6 +49,7 @@ class OAuthCredential(db.Model):
             "client_id",
             "google_client_id",
             "google_client_secret",
+            "google_redirect_uri",  # NEW FIELD
             "scopes",
             "access_token",
             "refresh_token",
@@ -65,6 +66,7 @@ class OAuthCredential(db.Model):
             "client_id": self.client_id,
             "google_client_id": self.google_client_id,
             "google_client_secret": self.google_client_secret,
+            "google_redirect_uri": self.google_redirect_uri,  # NEW FIELD
             "scopes": self.scopes,
             "access_token": self.access_token,
             "refresh_token": self.refresh_token,

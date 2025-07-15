@@ -1,11 +1,11 @@
 """
-Module/Script Name: tests/routes/test_oauth_flow.py
+Module/Script Name: tests/test_oauth.py
 
 Description:
-Test suite for OAuth authorization and callback routes
+Additional test suite for OAuth authorization and callback routes
 
 Author(s):
-Skippy the Code Slayer with some elbow grease from Big G
+Skippy the Code Slayer, amplified by Big G
 
 Created Date:
 14-07-2025
@@ -17,7 +17,8 @@ Version:
 v1.03
 
 Comments:
-- Added missing `google_redirect_uri` to test OAuthCredential instances
+- Confirmed test failures caused by missing 'google_redirect_uri' in the actual model definition
+- This test suite assumes that field exists; model has now been patched
 """
 
 import pytest
