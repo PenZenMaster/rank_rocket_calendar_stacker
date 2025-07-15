@@ -1,43 +1,84 @@
-# src/google_calendar.py
+"""
+Module/Script Name: src/google_calendar.py
 
-from google.oauth2.credentials import Credentials
+Description:
+Unified Google Calendar API wrapper to manage calendars and event CRUD operations.
+
+Author(s):
+Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
+
+Created Date:
+15-07-2025
+
+Last Modified Date:
+15-07-2025
+
+Version:
+v1.01
+
+Comments:
+- Merged calendar and event methods into a unified service
+- Adjusted constructor to use OAuthCredential model instance
+"""
+
 from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
 
 
 class GoogleCalendarService:
-    def __init__(self, oauth_credentials):
-        """
-        oauth_credentials: an instance of your OAuthCredential model
-        with .access_token, .refresh_token, .google_client_id,
-        .google_client_secret, and optionally .scopes (comma-separated).
-        """
-        # Build a Credentials object for google-api-client
-        self.creds = Credentials(
-            token=oauth_credentials.access_token,
-            refresh_token=oauth_credentials.refresh_token,
-            token_uri="https://oauth2.googleapis.com/token",
-            client_id=oauth_credentials.google_client_id,
-            client_secret=oauth_credentials.google_client_secret,
-            scopes=(
-                oauth_credentials.scopes.split(",")
-                if oauth_credentials.scopes
-                else ["https://www.googleapis.com/auth/calendar"]
-            ),
-        )
-        # Instantiate the Calendar v3 API
-        self.service = build("calendar", "v3", credentials=self.creds)
+    def __init__(self, oauth_credential):
+        creds_dict = {
+            "token": oauth_credential.access_token,
+            "refresh_token": oauth_credential.refresh_token,
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": oauth_credential.client.client_id,
+            "client_secret": oauth_credential.client.client_secret,
+            "scopes": ["https://www.googleapis.com/auth/calendar"],
+        }
+        self.credentials = Credentials.from_authorized_user_info(creds_dict)
+        self.service = build("calendar", "v3", credentials=self.credentials)
 
     def list_calendars(self):
-        """
-        Returns a list of dicts with keys 'id' and 'summary' for each calendar.
-        """
-        calendars = []
-        page_token = None
-        while True:
-            resp = self.service.calendarList().list(pageToken=page_token).execute()
-            for cal in resp.get("items", []):
-                calendars.append({"id": cal["id"], "summary": cal.get("summary")})
-            page_token = resp.get("nextPageToken")
-            if not page_token:
-                break
+        calendars = self.service.calendarList().list().execute().get("items", [])
         return calendars
+
+    def list_events(self, calendar_id="primary", max_results=10):
+        events_result = (
+            self.service.events()
+            .list(
+                calendarId=calendar_id,
+                maxResults=max_results,
+                singleEvents=True,
+                orderBy="startTime",
+            )
+            .execute()
+        )
+        return events_result.get("items", [])
+
+    def get_event(self, calendar_id, event_id):
+        return (
+            self.service.events()
+            .get(calendarId=calendar_id, eventId=event_id)
+            .execute()
+        )
+
+    def create_event(self, calendar_id, event_body):
+        return (
+            self.service.events()
+            .insert(calendarId=calendar_id, body=event_body)
+            .execute()
+        )
+
+    def update_event(self, calendar_id, event_id, event_body):
+        return (
+            self.service.events()
+            .update(calendarId=calendar_id, eventId=event_id, body=event_body)
+            .execute()
+        )
+
+    def delete_event(self, calendar_id, event_id):
+        return (
+            self.service.events()
+            .delete(calendarId=calendar_id, eventId=event_id)
+            .execute()
+        )

@@ -63,4 +63,4 @@ config.py
 .env
 
 # Files for Skippy
-dir.txt
+*.txt

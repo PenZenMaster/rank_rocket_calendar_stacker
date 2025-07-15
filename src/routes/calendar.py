@@ -1,5 +1,5 @@
-"""
-Module/Script Name: calendar.py
+""" "
+Module/Script Name: src/routes/calendar.py
 
 Description:
 Calendar-related endpoints, wrapping Google Calendar API calls.
@@ -14,10 +14,11 @@ Last Modified Date:
 2025-07-15
 
 Version:
-v1.03
+v1.06
 
 Comments:
-- Fixed attribute access issues for VS Code (Pylance) by adding stub methods in GoogleCalendarService
+- Fixed Pylance type resolution error by renaming stub class alias to prevent conflict
+- Updated constructor call style to match actual implementation
 """
 
 from flask import Blueprint, request, jsonify, abort
@@ -27,10 +28,14 @@ from src.models.oauth import OAuthCredential
 from src.google_calendar import GoogleCalendarService
 
 # Patch class to silence Pylance complaints in VS Code (stub typing support)
-if False:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
     from typing import Dict, Any
 
-    class GoogleCalendarService:
+    class _GoogleCalendarServiceStub:
+        def __init__(self, creds: OAuthCredential): ...
+        def list_calendars(self) -> list: ...
         def list_events(self) -> list: ...
         def create_event(
             self, calendar_id: str, event_data: Dict[str, Any]
@@ -55,7 +60,7 @@ def list_calendars(client_id):
             200,
         )
 
-    svc = GoogleCalendarService(oauth_credentials=creds)
+    svc = GoogleCalendarService(creds)
     calendars = svc.list_calendars()
     return jsonify({"success": True, "data": calendars}), 200
 
@@ -65,7 +70,7 @@ def list_events(client_id):
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         return jsonify({"error": "OAuth credentials not found"}), 404
-    svc = GoogleCalendarService(oauth_credentials=creds)
+    svc = GoogleCalendarService(creds)
     events = svc.list_events()
     return jsonify(events), 200
 
@@ -75,7 +80,7 @@ def create_event(client_id):
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         return jsonify({"error": "OAuth credentials not found"}), 404
-    svc = GoogleCalendarService(oauth_credentials=creds)
+    svc = GoogleCalendarService(creds)
     event = svc.create_event("primary", request.get_json())
     return jsonify(event), 201
 
@@ -85,7 +90,7 @@ def get_event(client_id, event_id):
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         return jsonify({"error": "OAuth credentials not found"}), 404
-    svc = GoogleCalendarService(oauth_credentials=creds)
+    svc = GoogleCalendarService(creds)
     event = svc.get_event("primary", event_id)
     return jsonify(event), 200
 
@@ -95,7 +100,7 @@ def update_event(client_id, event_id):
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         return jsonify({"error": "OAuth credentials not found"}), 404
-    svc = GoogleCalendarService(oauth_credentials=creds)
+    svc = GoogleCalendarService(creds)
     event = svc.update_event("primary", event_id, request.get_json())
     return jsonify(event), 200
 
@@ -107,6 +112,6 @@ def delete_event(client_id, event_id):
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         return jsonify({"error": "OAuth credentials not found"}), 404
-    svc = GoogleCalendarService(oauth_credentials=creds)
+    svc = GoogleCalendarService(creds)
     svc.delete_event("primary", event_id)
     return "", 204
