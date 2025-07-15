@@ -94,7 +94,8 @@ E:.
 |   |       |   |   +---gapic_v1
 |   |       |   |   +---operations_v1
 |   |       |   |   |   \---transports
-|   |       |   |   \---retry
+|   |       |   |   +---retry
+|   |       |   |   \---__pycache__
 |   |       |   +---auth
 |   |       |   |   +---aio
 |   |       |   |   |   \---transport
@@ -124,8 +125,9 @@ E:.
 |   |       |   +---type
 |   |       |   \---_upb
 |   |       +---googleapiclient
-|   |       |   \---discovery_cache
-|   |       |       \---documents
+|   |       |   +---discovery_cache
+|   |       |   |   \---documents
+|   |       |   \---__pycache__
 |   |       +---googleapis_common_protos-1.70.0.dist-info
 |   |       +---google_api_core-2.25.1.dist-info
 |   |       |   \---licenses
@@ -144,6 +146,7 @@ E:.
 |   |       +---greenlet-3.2.3.dist-info
 |   |       |   \---licenses
 |   |       +---httplib2
+|   |       |   \---__pycache__
 |   |       +---httplib2-0.22.0.dist-info
 |   |       +---idna
 |   |       |   \---__pycache__
@@ -354,7 +357,8 @@ E:.
 |   |       |   \---licenses
 |   |       +---pyparsing
 |   |       |   +---diagram
-|   |       |   \---tools
+|   |       |   +---tools
+|   |       |   \---__pycache__
 |   |       +---pyparsing-3.2.3.dist-info
 |   |       +---pytest
 |   |       |   \---__pycache__
@@ -414,6 +418,7 @@ E:.
 |   |       +---typing_extensions-4.14.0.dist-info
 |   |       |   \---licenses
 |   |       +---uritemplate
+|   |       |   \---__pycache__
 |   |       +---uritemplate-4.2.0.dist-info
 |   |       |   \---licenses
 |   |       +---urllib3
@@ -431,7 +436,8 @@ E:.
 |   |       |   +---datastructures
 |   |       |   |   \---__pycache__
 |   |       |   +---debug
-|   |       |   |   \---shared
+|   |       |   |   +---shared
+|   |       |   |   \---__pycache__
 |   |       |   +---middleware
 |   |       |   +---routing
 |   |       |   |   \---__pycache__
@@ -460,7 +466,8 @@ E:.
 +---.vscode
 +---docs
 +---migrations
-|   \---versions
+|   +---versions
+|   \---__pycache__
 +---src
 |   +---.pytest_cache
 |   |   \---v

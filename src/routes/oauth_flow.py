@@ -11,16 +11,13 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-14-07-2025
+15-07-2025
 
 Version:
-v1.08
+v1.09
 
 Comments:
-- Injected sys.path hook to support PYTHONPATH-relative imports from any test runner context
-- Fixed incorrect attribute usage: replaced `redirect_uri` with correct `google_redirect_uri`
-- Added `google_redirect_uri` to OAuthCredential model
-- Patched test setup in test_oauth_flow.py to include required field
+- Replaced deprecated Model.query.get(id) with db.session.get(Model, id) for SQLAlchemy 2.0 compatibility
 """
 
 import sys
@@ -42,7 +39,7 @@ oauth_flow_bp = Blueprint("oauth_flow_bp", __name__)
 
 @oauth_flow_bp.route("/authorize/<int:oauth_id>")
 def authorize(oauth_id):
-    oauth_entry = OAuthCredential.query.get(oauth_id)
+    oauth_entry = db.session.get(OAuthCredential, oauth_id)
     if not oauth_entry:
         return "OAuth credentials not found", 404
 
@@ -79,7 +76,7 @@ def callback():
     if not oauth_id:
         return "Missing session oauth_id", 400
 
-    oauth_entry = OAuthCredential.query.get(oauth_id)
+    oauth_entry = db.session.get(OAuthCredential, oauth_id)
     if not oauth_entry:
         return "OAuth credentials not found", 404
 

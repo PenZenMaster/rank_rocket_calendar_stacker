@@ -643,60 +643,67 @@ This project plan serves as a living document that should be regularly reviewed 
 
 
 
-## Phase 1: Project Initialization & Core OAuth Logic (Complete ✅)
+# Project Plan: Google Calendar Management Software
 
-### Week 1–2
-- [x] Project structure created with Flask blueprints and modules
-- [x] Initial GitHub repository set up (`rank_rocket_calendar_stacker`)
-- [x] `client.py`, `calendar.py`, `user.py` routes implemented
-- [x] Core OAuth model scaffolded (`OAuthCredential`)
-- [x] CI pipeline configured via GitHub Actions
-- [x] `pytest.ini` and base unit test structure created
+## Phase 1: Project Bootstrapping and Setup
 
----
+### ✅ Completed:
+- Repository initialized and pushed to GitHub: [https://github.com/PenZenMaster/rank_rocket_calendar_stacker](https://github.com/PenZenMaster/rank_rocket_calendar_stacker)
+- Directory structure organized using `src/` and `tests/`
+- `Flask` application factory pattern implemented
+- `pytest` configured with coverage reporting
+- Basic test suite scaffolded and passing
 
 ## Phase 2: OAuth Routes, Models, and Unit Tests
 
-### Week 3 (In Progress)
+### ✅ Completed:
+- `OAuthCredential` model defined with required fields
+- OAuth flow (`/authorize/<oauth_id>` and `/callback`) implemented using `google-auth-oauthlib`
+- Routes registered under blueprint `oauth_flow_bp`
+- Unit tests written for both `/authorize` and `/callback` routes
+- Test isolation with `app.test_client()` and scoped SQLite test DB
+- Warnings eliminated (removed `.query.get()` in favor of `db.session.get()`)
+- Clean test teardown with `teardown_appcontext`
+- Full test suite runs with 4 passing tests and 45% total coverage
 
-#### ✅ Completed
-- [x] `oauth.py` routes implemented with `/authorize` and `/callback` endpoints
-- [x] Created `OAuthCredential` SQLAlchemy model with proper serialization and constraints
-- [x] Unit test structure setup with `conftest.py` providing Flask test app and database context
-- [x] `Client` model patched to accept `name` and `email`
-- [x] Added `TestingConfig` class to `config.py`
-- [x] Database initialization and teardown implemented in `conftest.py`
-- [x] Project-wide import errors and circular dependency issues resolved
+## Phase 3: Calendar Integration Layer (**Next**)
 
-#### ❗ Outstanding
-- [ ] Tests still failing due to import/config errors (likely `src.config` path or fixture reuse)
-- [ ] Final OAuth routes (`refresh_token`, token expiry handling) not yet implemented
-- [ ] Basic front-end UI for user authorization flow still needed
+### 🔜 Tasks:
+- Implement Google Calendar Service Wrapper
+  - `create_event`, `get_event`, `update_event`, `delete_event`, `list_events`
+- Secure authenticated API interaction using stored `OAuthCredential`
+- Integrate `googleapiclient.discovery.build` logic
+- Handle credential refresh and token expiry
+- Write unit tests with mocked Google API responses
+- Achieve 90%+ test coverage for integration layer
+
+## Phase 4: UI Restoration and OAuth Completion
+
+### 🔜 Tasks:
+- Reconnect working UI to Flask routes
+- Ensure OAuth redirect/callback properly drives token storage
+- Verify token availability in UI context
+- End-to-end manual QA validation
+
+## Phase 5: Deployment and Monitoring
+
+### 🔜 Tasks:
+- Dockerize Flask app and database
+- Deploy to Heroku or Render with Postgres
+- Set up monitoring/logging (e.g., Sentry or Logtail)
+- Schedule weekly cron for calendar sync validation
 
 ---
 
-## Phase 3: Calendar Integration Layer
-
-### Week 4 (Upcoming)
-- [ ] Implement Google Calendar API wrapper (`calendar_google.py`)
-- [ ] Define core calendar sync strategy and logic
-- [ ] Connect authorized users' credentials to pull/push calendar events
-
----
-
-## Phase 4: UI Integration & Launch Prep
-
-### Week 5
-- [ ] Build simple UI dashboard with React
-- [ ] Integrate login/auth flow into front-end
-- [ ] Final polish and deploy to production
-
----
+**Maintainer:** Skippy the Code Slayer (with Big G's furious keystrokes)
+**Last Updated:** 15-07-2025
 
 ## Time Log
 
 | Date       | Hours | Tasks Completed                                |
 |------------|-------|------------------------------------------------|
 | 13-07-2025 | 6     | Patched tests, OAuth model, config setup, debugging CI errors |
+| 14-07-2025 | 12    | Wasted time fixing all of Skippys sloppy coding |
+
 ""
 
