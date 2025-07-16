@@ -14,10 +14,11 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.07
+v1.08
 
 Comments:
 - Extended create_app to accept dict config for pytest integration
+- Added default in-memory SQLite for testing dict configs without DB URI
 - Preserves original string-based config loading
 """
 
@@ -38,7 +39,11 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     app = Flask(__name__)
     # Support dict for test overrides, otherwise load from object path
     if isinstance(config_obj, dict):
+        # Update app config with overrides
         app.config.update(config_obj)
+        # Ensure a default database URI for testing
+        if app.config.get("TESTING") and not app.config.get("SQLALCHEMY_DATABASE_URI"):
+            app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     else:
         app.config.from_object(config_obj)
 
@@ -54,9 +59,10 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     def index():
         return "Rank Rocket Calendar Stacker is Alive!"
 
+    # Register blueprints
     app.register_blueprint(oauth_bp)
-    app.register_blueprint(oauth_flow_bp)  # Register new blueprint
-    app.register_blueprint(calendar_bp)  # Register calendar endpoints
+    app.register_blueprint(oauth_flow_bp)
+    app.register_blueprint(calendar_bp)
 
     return app
 
