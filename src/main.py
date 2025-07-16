@@ -14,11 +14,12 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.08
+v1.09
 
 Comments:
 - Extended create_app to accept dict config for pytest integration
 - Added default in-memory SQLite for testing dict configs without DB URI
+- Set SERVER_NAME for URL generation in tests
 - Preserves original string-based config loading
 """
 
@@ -44,6 +45,9 @@ def create_app(config_obj: str | dict = "src.config.Config"):
         # Ensure a default database URI for testing
         if app.config.get("TESTING") and not app.config.get("SQLALCHEMY_DATABASE_URI"):
             app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+        # Ensure SERVER_NAME for URL building in tests
+        if app.config.get("TESTING") and not app.config.get("SERVER_NAME"):
+            app.config["SERVER_NAME"] = "localhost"
     else:
         app.config.from_object(config_obj)
 
