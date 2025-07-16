@@ -2,7 +2,7 @@
 Module/Script Name: src/main.py
 
 Description:
-Flask application factory and blueprint registration
+Flask application factory and blueprint registration, now supporting dict-based config overrides in testing.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
@@ -11,17 +11,14 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-15-07-2025
+17-07-2025
 
 Version:
-v1.06
+v1.07
 
 Comments:
-- Registered oauth_flow_bp to enable /authorize and /callback routes
-- Added executable app.run block for local development testing
-- Added root (/) route for dev sanity check
-- Registered calendar_bp to enable /clients/<client_id>/calendars endpoint
-- Added teardown_appcontext handler to ensure db.session is removed
+- Extended create_app to accept dict config for pytest integration
+- Preserves original string-based config loading
 """
 
 from flask import Flask
@@ -31,9 +28,19 @@ from src.routes.oauth_flow import oauth_flow_bp  # Added for auth flow
 from src.routes.calendar import calendar_bp  # Register calendar endpoints
 
 
-def create_app(config_obj="src.config.Config"):
+def create_app(config_obj: str | dict = "src.config.Config"):
+    """
+    Flask application factory.
+
+    Args:
+        config_obj (str | dict): Import path to config class or dict of config overrides.
+    """
     app = Flask(__name__)
-    app.config.from_object(config_obj)
+    # Support dict for test overrides, otherwise load from object path
+    if isinstance(config_obj, dict):
+        app.config.update(config_obj)
+    else:
+        app.config.from_object(config_obj)
 
     db.init_app(app)
     with app.app_context():
