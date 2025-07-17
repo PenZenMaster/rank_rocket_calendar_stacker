@@ -23,6 +23,7 @@ Comments:
 - Preserves original string-based config loading
 """
 
+import sys
 import os
 from flask import Flask
 from src.extensions import db
@@ -30,6 +31,8 @@ from src.routes.oauth import oauth_bp
 from src.routes.oauth_flow import oauth_flow_bp
 from src.routes.calendar import calendar_bp
 from src.routes.client import client_bp
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 def create_app(config_obj: str | dict = "src.config.Config"):
