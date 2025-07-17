@@ -60,7 +60,8 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     print(f"SQLALCHEMY_DATABASE_URI: {app.config.get("SQLALCHEMY_DATABASE_URI")}")
 
     # Initialize database
-    db.init_app(app)    with app.app_context():
+    db.init_app(app)
+    with app.app_context():
         # Ensure all models are imported so SQLAlchemy can find them
         from src.models import client, oauth, oauth_credential, user, base
 
@@ -108,5 +109,3 @@ if __name__ == "__main__":
             return "File not found", 404
 
     app.run(debug=True)
-
-
