@@ -1,5 +1,5 @@
 """
-Module/Script Name: client.py
+Module/Script Name: src/routes/client.py
 
 Description:
 CRUD endpoints for managing Client records via REST API, plus Google Calendar listing.
@@ -8,13 +8,16 @@ Author(s):
 Skippy the Magnificent with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
-2025-07-11
+11-07-2025
 
 Last Modified Date:
-2025-07-15
+17-07-2025
+
+Version:
+v1.08
 
 Comments:
-- Version 1.07  # matched GoogleCalendarService constructor to actual parameters
+- Added handling of google_account_email field to create and update endpoints.
 """
 
 from flask import Blueprint, request, jsonify, abort
@@ -37,6 +40,14 @@ def validate_client_data(data):
     return name, email
 
 
+def validate_google_email(data):
+    """Ensure google_account_email field is present and valid."""
+    google_email = data.get("google_account_email", "").strip()
+    if not google_email or "@" not in google_email:
+        abort(400, description="Valid 'google_account_email' is required.")
+    return google_email
+
+
 @client_bp.route("/api/clients", methods=["GET"])
 def get_clients():
     """List all clients."""
@@ -49,10 +60,8 @@ def create_client():
     """Create a new client."""
     data = request.get_json() or {}
     name, email = validate_client_data(data)
-    google_account_email = data.get("google_account_email", "").strip()
-    if not google_account_email or "@" not in google_account_email:
-        abort(400, description="Valid 'google_account_email' is required.")
-    new_client = Client(name=name, email=email)
+    google_email = validate_google_email(data)
+    new_client = Client(name=name, email=email, google_email=google_email)
 
     db.session.add(new_client)
     db.session.commit()
@@ -67,8 +76,10 @@ def update_client(client_id):
     )
     data = request.get_json() or {}
     name, email = validate_client_data(data)
+    google_email = validate_google_email(data)
     client.name = name
     client.email = email
+    client.google_email = google_email
     db.session.commit()
     return jsonify(client.to_dict()), 200
 
