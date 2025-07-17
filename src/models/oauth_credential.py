@@ -15,19 +15,18 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.02
+v1.03
 
 Comments:
-- Switched relationship to reference Client class directly instead of string to ensure mappers resolve
-- Added explicit import of Client to avoid InvalidRequestError on mapper initialization
-- Included file path in header for consistency with other modules
+- Removed direct import of Client to eliminate circular import
+- Switched relationship to string-based reference for deferred resolution
+- Ensured relationship resolution via configure_mappers in app setup or conftest
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from src.models.base import Base
-from src.models.client import Client
 
 
 class OAuthCredential(Base):
@@ -46,5 +45,5 @@ class OAuthCredential(Base):
 
     is_valid = Column(Boolean, default=False)
 
-    # Reference Client class directly for proper mapper resolution
-    client = relationship(Client, back_populates="oauth_credentials")
+    # String-based relationship to avoid circular import; resolved via configure_mappers()
+    client = relationship("Client", back_populates="oauth_credentials")
