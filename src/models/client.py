@@ -1,5 +1,6 @@
 """
 Module/Script Name: src/models/client.py
+Path: E:/projects/rank_rocket_calendar_stacker/src/models/client.py
 
 Description:
 SQLAlchemy model for Client entities, including name, email, google_email, and OAuth credential relationship.
@@ -14,13 +15,15 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.09
+v1.10
 
 Comments:
-- Added google_email column to persist client's Gmail address
+- Directly import OAuthCredential class for relationship to avoid mapping resolution issues
+- Removed incorrect string path and replaced with class reference in `oauth_credentials` relationship
 """
 
 from src.extensions import db
+from src.models.oauth_credential import OAuthCredential
 
 
 class Client(db.Model):
@@ -31,13 +34,14 @@ class Client(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     google_email = db.Column(db.String(120), unique=True, nullable=False)
     oauth_credentials = db.relationship(
-        "src.models.oauth.OAuthCredential",  # Fully-qualified path to avoid ambiguity
+        OAuthCredential,
         back_populates="client",
         cascade="all, delete-orphan",
         lazy=True,
     )
 
     def __init__(self, name, email, google_email):
+        """Initialize a new Client."""
         self.name = name
         self.email = email
         self.google_email = google_email

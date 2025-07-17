@@ -1,5 +1,6 @@
 """
-Module/Script Name: oauth_credential.py
+Module/Script Name: src/models/oauth_credential.py
+Path: E:/projects/rank_rocket_calendar_stacker/src/models/oauth_credential.py
 
 Description:
 SQLAlchemy model for storing Google OAuth credentials linked to a client.
@@ -8,19 +9,25 @@ Author(s):
 Skippy the Magnificent with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
-2025-07-12
+12-07-2025
 
 Last Modified Date:
-2025-07-12
+17-07-2025
+
+Version:
+v1.02
 
 Comments:
-- v1.00: Initial model scaffold for OAuthCredential
+- Switched relationship to reference Client class directly instead of string to ensure mappers resolve
+- Added explicit import of Client to avoid InvalidRequestError on mapper initialization
+- Included file path in header for consistency with other modules
 """
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from src.models.base import Base  # Assumes you have a common declarative base
+from src.models.base import Base
+from src.models.client import Client
 
 
 class OAuthCredential(Base):
@@ -39,4 +46,5 @@ class OAuthCredential(Base):
 
     is_valid = Column(Boolean, default=False)
 
-    client = relationship("Client", back_populates="oauth_credentials")
+    # Reference Client class directly for proper mapper resolution
+    client = relationship(Client, back_populates="oauth_credentials")
