@@ -64,3 +64,4 @@ config.py
 
 # Files for Skippy
 *.txt
+*.log
