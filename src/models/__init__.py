@@ -14,8 +14,9 @@ Last Modified Date:
 14-07-2025
 
 Version:
-v1.01
+v1.02
+Fixed a Skippy fuckup by not helpng Big G with the search for use of the deleted file
 """
 
 from .client import Client
-from .oauth import OAuthCredential
+from .oauth_credential import OAuthCredential
