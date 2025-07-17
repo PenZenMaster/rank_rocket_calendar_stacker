@@ -2,7 +2,7 @@
 Module/Script Name: src/main.py
 
 Description:
-Flask application factory and blueprint registration, now supporting dict-based config overrides in testing.
+Flask application factory and blueprint registration, now supporting dict-based config overrides in testing and loading templates from the project-level templates/ directory.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
@@ -11,23 +11,23 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-17-07-2025
+18-07-2025
 
 Version:
-v1.09
+v1.11
 
 Comments:
-- Extended create_app to accept dict config for pytest integration
-- Added default in-memory SQLite for testing dict configs without DB URI
-- Set SERVER_NAME for URL generation in tests
+- Added project-level templates directory via `template_folder`
+- Ensured dict configs set SECRET_KEY, SERVER_NAME, and in-memory SQLite URI
 - Preserves original string-based config loading
 """
 
+import os
 from flask import Flask
 from src.extensions import db
 from src.routes.oauth import oauth_bp
-from src.routes.oauth_flow import oauth_flow_bp  # Added for auth flow
-from src.routes.calendar import calendar_bp  # Register calendar endpoints
+from src.routes.oauth_flow import oauth_flow_bp
+from src.routes.calendar import calendar_bp
 
 
 def create_app(config_obj: str | dict = "src.config.Config"):
@@ -37,20 +37,23 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     Args:
         config_obj (str | dict): Import path to config class or dict of config overrides.
     """
-    app = Flask(__name__)
-    # Support dict for test overrides, otherwise load from object path
+    # Create app with templates folder at project root
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    templates_path = os.path.join(root, "templates")
+    app = Flask(__name__, template_folder=templates_path)
+
+    # Support dict for test overrides
     if isinstance(config_obj, dict):
-        # Update app config with overrides
         app.config.update(config_obj)
-        # Ensure a default database URI for testing
-        if app.config.get("TESTING") and not app.config.get("SQLALCHEMY_DATABASE_URI"):
-            app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-        # Ensure SERVER_NAME for URL building in tests
-        if app.config.get("TESTING") and not app.config.get("SERVER_NAME"):
-            app.config["SERVER_NAME"] = "localhost"
+        # Testing defaults
+        if app.config.get("TESTING"):
+            app.config.setdefault("SQLALCHEMY_DATABASE_URI", "sqlite:///:memory:")
+            app.config.setdefault("SERVER_NAME", "localhost")
+            app.config.setdefault("SECRET_KEY", "test-secret")
     else:
         app.config.from_object(config_obj)
 
+    # Initialize database
     db.init_app(app)
     with app.app_context():
         db.create_all()
@@ -59,6 +62,7 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     def shutdown_session(exception=None):
         db.session.remove()
 
+    # Healthcheck endpoint
     @app.route("/")
     def index():
         return "Rank Rocket Calendar Stacker is Alive!"
