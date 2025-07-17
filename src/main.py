@@ -14,7 +14,7 @@ Last Modified Date:
 19-07-2025
 
 Version:
-v1.13
+v1.14
 
 Comments:
 - Added project-level templates directory via `template_folder`
