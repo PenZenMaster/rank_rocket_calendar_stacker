@@ -15,12 +15,12 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.04
+v1.05
 
 Comments:
-- Switched to use Flask-SQLAlchemy `db.Model` to share metadata with `Client` and avoid missing table issues
-- Removed separate declarative Base import
+- Removed cascade delete-orphan from OAuthCredential.client relationship to avoid InvalidRequestError
 - Retained string-based relationship for deferred resolution
+- Continues to share metadata with Client via Flask-SQLAlchemy db.Model
 """
 
 from datetime import datetime
@@ -43,13 +43,8 @@ class OAuthCredential(db.Model):
 
     is_valid = db.Column(db.Boolean, default=False)
 
-    # String-based relationship to Client; resolved after both classes are defined
-    client = db.relationship(
-        "Client",
-        back_populates="oauth_credentials",
-        cascade="all, delete-orphan",
-        lazy=True,
-    )
+    # String-based relationship to Client; delete-orphan cascade on parent side only
+    client = db.relationship("Client", back_populates="oauth_credentials", lazy=True)
 
     def __repr__(self):
         return f"<OAuthCredential client_id={self.client_id} valid={self.is_valid}>"
