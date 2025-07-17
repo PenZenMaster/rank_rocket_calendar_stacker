@@ -15,35 +15,41 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.03
+v1.04
 
 Comments:
-- Removed direct import of Client to eliminate circular import
-- Switched relationship to string-based reference for deferred resolution
-- Ensured relationship resolution via configure_mappers in app setup or conftest
+- Switched to use Flask-SQLAlchemy `db.Model` to share metadata with `Client` and avoid missing table issues
+- Removed separate declarative Base import
+- Retained string-based relationship for deferred resolution
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
 from datetime import datetime
-from src.models.base import Base
+from src.extensions import db
 
 
-class OAuthCredential(Base):
+class OAuthCredential(db.Model):
     __tablename__ = "oauth_credentials"
 
-    id = Column(Integer, primary_key=True)
-    client_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=False)
 
-    google_client_id = Column(String(255), nullable=False)
-    google_client_secret = Column(String(255), nullable=False)
-    scopes = Column(String(1000), nullable=True)
+    google_client_id = db.Column(db.String(255), nullable=False)
+    google_client_secret = db.Column(db.String(255), nullable=False)
+    scopes = db.Column(db.String(1000), nullable=True)
 
-    access_token = Column(String(500), nullable=True)
-    refresh_token = Column(String(500), nullable=True)
-    expires_at = Column(DateTime, nullable=True)
+    access_token = db.Column(db.String(500), nullable=True)
+    refresh_token = db.Column(db.String(500), nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
 
-    is_valid = Column(Boolean, default=False)
+    is_valid = db.Column(db.Boolean, default=False)
 
-    # String-based relationship to avoid circular import; resolved via configure_mappers()
-    client = relationship("Client", back_populates="oauth_credentials")
+    # String-based relationship to Client; resolved after both classes are defined
+    client = db.relationship(
+        "Client",
+        back_populates="oauth_credentials",
+        cascade="all, delete-orphan",
+        lazy=True,
+    )
+
+    def __repr__(self):
+        return f"<OAuthCredential client_id={self.client_id} valid={self.is_valid}>"
