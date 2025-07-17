@@ -14,7 +14,7 @@ Last Modified Date:
 19-07-2025
 
 Version:
-v1.17
+v1.18
 
 Comments:
 DB Troubleshooting
@@ -66,6 +66,12 @@ def create_app(config_obj: str | dict = "src.config.Config"):
         from src.models import client, oauth, oauth_credential, user, base
 
         db.create_all()
+
+        # Debugging: Print columns of the Client table
+        from sqlalchemy import inspect
+
+        inspector = inspect(db.engine)
+        print("Columns in clients table:", inspector.get_columns("clients"))
 
     # In testing mode, push a test request context to enable url_for
     if app.config.get("TESTING"):
