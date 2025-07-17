@@ -1,9 +1,9 @@
 """
-Module/Script Name: src/models/__init__.py
-Path: E:/projects/rank_rocket_calendar_stacker/src/models/__init__.py
+Module/Script Name: src/__init__.py
+Path: E:/projects/rank_rocket_calendar_stacker/src/__init__.py
 
 Description:
-Model package initializer. Exposes the canonical SQLAlchemy models for the application.
+Package initializer for Rank Rocket Calendar Stacker application.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
@@ -15,12 +15,12 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.00
+v1.01
 
 Comments:
-- Imports only the definitive model definitions to avoid stale or redundant references
-- Removed legacy `oauth.py` import to prevent ModuleNotFoundError
+- Removed legacy top-level model imports to prevent `ModuleNotFoundError`
+- Entry-point exposes application factory only
 """
 
-from .client import Client
-from .oauth_credential import OAuthCredential
+# Expose application factory
+from .main import create_app
