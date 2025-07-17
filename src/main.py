@@ -57,28 +57,15 @@ def create_app(config_obj: str | dict = "src.config.Config"):
         app.config["SERVER_NAME"] = "localhost"
         app.config["SECRET_KEY"] = "test-secret"
 
-    print(f"SQLALCHEMY_DATABASE_URI: {app.config.get("SQLALCHEMY_DATABASE_URI")}")
-
-    # Initialize database
     db.init_app(app)
     with app.app_context():
         # Ensure all models are imported so SQLAlchemy can find them
         from src.models import client, oauth, oauth_credential, user, base
 
-        # Explicitly reload the client module to ensure latest definition is used
-        import importlib
-
-        importlib.reload(client)
-
-        print(f"Path of loaded client.py: {client.__file__}")
-
+        print(
+            f"Attempting to create tables in: {app.config.get("SQLALCHEMY_DATABASE_URI")}"
+        )
         db.create_all()
-
-        # Debugging: Print columns of the Client table
-        from sqlalchemy import inspect
-
-        inspector = inspect(db.engine)
-        print("Columns in clients table:", inspector.get_columns("clients"))
 
     # In testing mode, push a test request context to enable url_for
     if app.config.get("TESTING"):
