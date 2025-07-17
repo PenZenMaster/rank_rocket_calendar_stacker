@@ -11,70 +11,96 @@ Created Date:
 18-07-2025
 
 Last Modified Date:
-18-07-2025
+19-07-2025
 
 Version:
-v1.07
+v1.09
 
 Comments:
-- Wired UI Event CRUD endpoints to GoogleCalendarService
-- Added helper for credential validation and redirection
-- Render calendar list, event form, handle create, update, delete with flash messages
+- _get_service returns None when no valid credentials
+- Routes flash and redirect on missing credentials
+- Render templates under templates/calendar
+- Full Python header and type annotations
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from src.models.oauth_credential import OAuthCredential
-from src.google_calendar import GoogleCalendarService
+from flask.typing import ResponseReturnValue
+from src.models.oauth import OAuthCredential
+from src.google_calendar import GoogleCalendarService, CalendarApiError
 
 calendar_bp = Blueprint("calendar", __name__)
 
 
-def _get_service_or_redirect(client_id):
-    """Helper to retrieve GoogleCalendarService or redirect to OAuth if no valid credentials."""
+def _get_service(client_id: int) -> GoogleCalendarService | None:
+    """
+    Helper to retrieve GoogleCalendarService or None if missing/invalid creds.
+    """
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
-    if not creds:
-        flash(
-            "No Google OAuth credentials found. Connect your account first.", "warning"
-        )
-        return redirect(url_for("oauth_flow_bp.authorize", oauth_id=client_id))
+    if creds is None:
+        return None
     return GoogleCalendarService(creds)
 
 
 @calendar_bp.route("/clients/<int:client_id>/calendars", methods=["GET"])
-def list_calendars(client_id):
-    """Display list of calendars or redirect if unauthorized."""
-    svc = _get_service_or_redirect(client_id)
-    if not isinstance(svc, GoogleCalendarService):
-        return svc
-    calendars = svc.list_calendars()
+def list_calendars(client_id: int) -> ResponseReturnValue:
+    svc = _get_service(client_id)
+    if svc is None:
+        flash(
+            "No Google OAuth credentials found. Connect your account first.", "warning"
+        )
+        return redirect(url_for("client_bp.get_clients"))
+    try:
+        calendars = svc.list_calendars()
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+        calendars = []
     return render_template(
         "calendar/list.html", client_id=client_id, calendars=calendars
     )
 
 
+@calendar_bp.route("/clients/<int:client_id>/calendars/events", methods=["GET"])
+def list_events(client_id: int) -> ResponseReturnValue:
+    svc = _get_service(client_id)
+    if svc is None:
+        flash(
+            "No Google OAuth credentials found. Connect your account first.", "warning"
+        )
+        return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    try:
+        events = svc.list_events()
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+        events = []
+    return render_template("calendar/events.html", client_id=client_id, events=events)
+
+
 @calendar_bp.route(
     "/clients/<int:client_id>/calendars/events/new", methods=["GET", "POST"]
 )
-def create_event(client_id):
-    """Render form or create new event and redirect to list view."""
-    svc = _get_service_or_redirect(client_id)
-    if not isinstance(svc, GoogleCalendarService):
-        return svc
-    if request.method == "POST":
-        data = request.form
-        svc.create_event(
-            "primary",
-            {
-                "summary": data.get("summary"),
-                "description": data.get("description"),
-                "start": {"dateTime": data.get("start")},
-                "end": {"dateTime": data.get("end")},
-            },
+def create_event(client_id: int) -> ResponseReturnValue:
+    svc = _get_service(client_id)
+    if svc is None:
+        flash(
+            "No Google OAuth credentials found. Connect your account first.", "warning"
         )
-        flash("Event created successfully.", "success")
         return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    if request.method == "POST":
+        event_data = request.form.to_dict()
+        try:
+            svc.create_event("primary", event_data)
+            flash("Event created successfully.", "success")
+            return redirect(url_for("calendar.list_events", client_id=client_id))
+        except CalendarApiError as e:
+            flash(str(e), "danger")
+            return render_template(
+                "calendar/event_form.html",
+                client_id=client_id,
+                event=event_data,
+                action="Create",
+            )
     return render_template(
-        "calendar/event_form.html", action="New", event=None, client_id=client_id
+        "calendar/event_form.html", client_id=client_id, event=None, action="Create"
     )
 
 
@@ -82,28 +108,34 @@ def create_event(client_id):
     "/clients/<int:client_id>/calendars/events/<string:event_id>/edit",
     methods=["GET", "POST"],
 )
-def edit_event(client_id, event_id):
-    """Render edit form or update event and redirect to list view."""
-    svc = _get_service_or_redirect(client_id)
-    if not isinstance(svc, GoogleCalendarService):
-        return svc
-    if request.method == "POST":
-        data = request.form
-        svc.update_event(
-            "primary",
-            event_id,
-            {
-                "summary": data.get("summary"),
-                "description": data.get("description"),
-                "start": {"dateTime": data.get("start")},
-                "end": {"dateTime": data.get("end")},
-            },
+def edit_event(client_id: int, event_id: str) -> ResponseReturnValue:
+    svc = _get_service(client_id)
+    if svc is None:
+        flash(
+            "No Google OAuth credentials found. Connect your account first.", "warning"
         )
-        flash("Event updated successfully.", "success")
         return redirect(url_for("calendar.list_calendars", client_id=client_id))
-    event = svc.get_event("primary", event_id)
+    if request.method == "POST":
+        event_data = request.form.to_dict()
+        try:
+            svc.update_event("primary", event_id, event_data)
+            flash("Event updated successfully.", "success")
+            return redirect(url_for("calendar.list_events", client_id=client_id))
+        except CalendarApiError as e:
+            flash(str(e), "danger")
+            return render_template(
+                "calendar/event_form.html",
+                client_id=client_id,
+                event=event_data,
+                action="Edit",
+            )
+    try:
+        event = svc.get_event("primary", event_id)
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+        return redirect(url_for("calendar.list_events", client_id=client_id))
     return render_template(
-        "calendar/event_form.html", action="Edit", event=event, client_id=client_id
+        "calendar/event_form.html", client_id=client_id, event=event, action="Edit"
     )
 
 
@@ -111,11 +143,16 @@ def edit_event(client_id, event_id):
     "/clients/<int:client_id>/calendars/events/<string:event_id>/delete",
     methods=["POST"],
 )
-def delete_event(client_id, event_id):
-    """Delete event and redirect to list view."""
-    svc = _get_service_or_redirect(client_id)
-    if not isinstance(svc, GoogleCalendarService):
-        return svc
-    svc.delete_event("primary", event_id)
-    flash("Event deleted successfully.", "success")
-    return redirect(url_for("calendar.list_calendars", client_id=client_id))
+def delete_event(client_id: int, event_id: str) -> ResponseReturnValue:
+    svc = _get_service(client_id)
+    if svc is None:
+        flash(
+            "No Google OAuth credentials found. Connect your account first.", "warning"
+        )
+        return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    try:
+        svc.delete_event("primary", event_id)
+        flash("Event deleted successfully.", "success")
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("calendar.list_events", client_id=client_id))
