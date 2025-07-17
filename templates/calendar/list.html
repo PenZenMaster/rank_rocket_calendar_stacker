@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Calendars{% endblock %}
+{% block title %}Your Calendars{% endblock %}
 
 {% block content %}
 <div class="container mx-auto p-6">
@@ -19,7 +19,7 @@
 		{% for cal in calendars %}
 		<li class="p-4 border rounded flex justify-between items-center">
 			<span class="font-medium">{{ cal.summary }}</span>
-			<a href="{{ url_for('calendar.list_events', client_id=client_id) }}" class="btn btn-primary">
+			<a href="{{ url_for('calendar.list_events', client_id=client_id, cal_id=cal.id) }}" class="btn btn-primary">
 				View Events
 			</a>
 		</li>
