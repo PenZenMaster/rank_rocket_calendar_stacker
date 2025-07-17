@@ -58,7 +58,7 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     with app.app_context():
         db.create_all()
 
-    # In testing mode, push a request context to enable url_for
+    # In testing mode, push a test request context to enable url_for
     if app.config.get("TESTING"):
         ctx = app.test_request_context()
         ctx.push()
@@ -67,6 +67,7 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     def shutdown_session(exception=None):
         db.session.remove()
 
+    # Healthcheck endpoint
     @app.route("/")
     def index():
         return "Rank Rocket Calendar Stacker is Alive!"
