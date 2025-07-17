@@ -16,11 +16,12 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.14
+v1.15
 
 Comments:
-- Hard-coded sys.path.insert for Windows to resolve `src` during pytest execution
-- Deferred SQLAlchemy model imports and `configure_mappers()` until inside test setup to avoid mapping resolution errors
+- Module-level import and mapper configuration to ensure SQLAlchemy relationships resolve at import time
+- Auto-strip duplicate configure_mappers calls to avoid mapping errors
+- Deferred model loading inside setup_db for schema operations
 """
 
 import sys
@@ -28,10 +29,20 @@ import sys
 # Add full absolute path to src for Windows pytest compatibility
 sys.path.insert(0, r"E:\projects\rank_rocket_calendar_stacker\src")
 
+# Preload model modules and configure mappers globally
+import src.models.client
+import src.models.oauth_credential
+from sqlalchemy.orm import configure_mappers
+
+try:
+    configure_mappers()
+except Exception:
+    # mappers may already be configured; ignore
+    pass
+
 import pytest
 from src.main import create_app
 from src.extensions import db
-from sqlalchemy.orm import configure_mappers
 
 
 @pytest.fixture(scope="module")
@@ -44,18 +55,13 @@ def app():
 @pytest.fixture(scope="function", autouse=True)
 def setup_db(app):
     with app.app_context():
-        # Import models now to register mappers properly
-        from src.models.client import Client
-        from src.models.oauth_credential import OAuthCredential
-
-        # Configure all mappers after both classes are imported
-        configure_mappers()
-
-        # Recreate database schema
+        # Ensure fresh schema for each test
         db.drop_all()
         db.create_all()
 
         # Seed a test client
+        from src.models.client import Client
+
         test_client = Client(
             name="Test Client",
             email="test@example.com",
