@@ -14,12 +14,10 @@ Last Modified Date:
 19-07-2025
 
 Version:
-v1.16
+v1.17
 
 Comments:
-This commit addresses a sqlite3.OperationalError: no such column that can occur when the Flask application starts and attempts to interact with the database. The root cause was that db.create_all() was not always aware of all defined SQLAlchemy models, leading to an incomplete database schema.
-To resolve this, the create_app function in src/main.py has been modified to explicitly import all models from src/models within the app.app_context() block, just before db.create_all() is called. This ensures that SQLAlchemy has discovered all model definitions, allowing it to correctly create or update the database schema with all necessary tables and columns (e.g., clients.email).
-This change improves the robustness of the application's database initialization process, especially in environments where the database file might be newly created or recreated.
+DB Troubleshooting
 """
 
 import os
@@ -59,9 +57,10 @@ def create_app(config_obj: str | dict = "src.config.Config"):
         app.config["SERVER_NAME"] = "localhost"
         app.config["SECRET_KEY"] = "test-secret"
 
+    print(f"SQLALCHEMY_DATABASE_URI: {app.config.get("SQLALCHEMY_DATABASE_URI")}")
+
     # Initialize database
-    db.init_app(app)
-    with app.app_context():
+    db.init_app(app)    with app.app_context():
         # Ensure all models are imported so SQLAlchemy can find them
         from src.models import client, oauth, oauth_credential, user, base
 
@@ -109,3 +108,5 @@ if __name__ == "__main__":
             return "File not found", 404
 
     app.run(debug=True)
+
+
