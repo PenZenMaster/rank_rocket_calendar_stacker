@@ -1,93 +1,144 @@
 """
-Module/Script Name: src/main.py
+Module/Script Name: src/routes/calendar.py
 
 Description:
-Flask application factory and blueprint registration, now supporting dict-based config overrides in testing and loading templates from the project-level templates/ directory.
+Calendar UI endpoints for Google Calendar management with Event CRUD views.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
-14-07-2025
-
-Last Modified Date:
 18-07-2025
 
+Last Modified Date:
+19-07-2025
+
 Version:
-v1.12
+v1.08
 
 Comments:
-- Added project-level templates directory via `template_folder`
-- Ensured dict configs set SECRET_KEY, SERVER_NAME, and in-memory SQLite URI
-- Automatically push test request context to support url_for in tests
-- Preserves original string-based config loading
+- Removed isinstance checks to avoid MagicMock conflicts
+- Helper returns None on missing credentials; routes handle redirect explicitly
+- Uses project-level templates/calendar paths
 """
 
-import os
-from flask import Flask
-from src.extensions import db
-from src.routes.oauth import oauth_bp
-from src.routes.oauth_flow import oauth_flow_bp
-from src.routes.calendar import calendar_bp
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask.typing import ResponseReturnValue
+from src.models.oauth import OAuthCredential
+from src.google_calendar import GoogleCalendarService, CalendarApiError
+
+calendar_bp = Blueprint("calendar", __name__)
 
 
-def create_app(config_obj: str | dict = "src.config.Config"):
-    """
-    Flask application factory.
-
-    Args:
-        config_obj (str | dict): Import path to config class or dict of config overrides.
-    """
-    # Set up project-level templates directory
-    root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    templates_path = os.path.join(root, "templates")
-    app = Flask(__name__, template_folder=templates_path)
-
-    # Support dict for test overrides
-    if isinstance(config_obj, dict):
-        app.config.update(config_obj)
-        if app.config.get("TESTING"):
-            # Default database URI for testing
-            app.config.setdefault("SQLALCHEMY_DATABASE_URI", "sqlite:///:memory:")
-            # Required for url_for outside request context
-            app.config.setdefault("SERVER_NAME", "localhost")
-            # Required for session/flashes in tests
-            app.config.setdefault("SECRET_KEY", "test-secret")
-    else:
-        app.config.from_object(config_obj)
-
-    # Initialize database
-    db.init_app(app)
-    with app.app_context():
-        db.create_all()
-
-    # In testing, push a test request context so url_for works
-    if app.config.get("TESTING"):
-        ctx = app.test_request_context()
-        ctx.push()
-
-    @app.teardown_appcontext
-    def shutdown_session(exception=None):
-        db.session.remove()
-
-    # Healthcheck endpoint
-    @app.route("/")
-    def index():
-        return "Rank Rocket Calendar Stacker is Alive!"
-
-    # Register blueprints
-    app.register_blueprint(oauth_bp)
-    app.register_blueprint(oauth_flow_bp)
-    app.register_blueprint(calendar_bp)
-
-    return app
+def _get_service_or_redirect(client_id: int) -> GoogleCalendarService | None:
+    """Helper to retrieve a GoogleCalendarService or None if no valid credentials."""
+    creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
+    if not creds:
+        flash(
+            "No Google OAuth credentials found. Connect your account first.", "warning"
+        )
+        return None
+    return GoogleCalendarService(creds)
 
 
-if __name__ == "__main__":
-    import logging
+@calendar_bp.route("/clients/<int:client_id>/calendars", methods=["GET"])
+def list_calendars(client_id: int) -> ResponseReturnValue:
+    svc = _get_service_or_redirect(client_id)
+    if svc is None:
+        return redirect(url_for("client_bp.get_clients"))
+    try:
+        calendars = svc.list_calendars()
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+        calendars = []
+    return render_template(
+        "calendar/list.html", client_id=client_id, calendars=calendars
+    )
 
-    logging.basicConfig(level=logging.DEBUG)
-    logging.debug("Starting Flask app...")
 
-    app = create_app()
-    app.run(debug=True)
+@calendar_bp.route("/clients/<int:client_id>/calendars/events", methods=["GET"])
+def list_events(client_id: int) -> ResponseReturnValue:
+    svc = _get_service_or_redirect(client_id)
+    if svc is None:
+        return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    try:
+        events = svc.list_events()
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+        events = []
+    return render_template("calendar/events.html", client_id=client_id, events=events)
+
+
+@calendar_bp.route(
+    "/clients/<int:client_id>/calendars/events/new", methods=["GET", "POST"]
+)
+def create_event(client_id: int) -> ResponseReturnValue:
+    svc = _get_service_or_redirect(client_id)
+    if svc is None:
+        return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    if request.method == "POST":
+        data = request.form.to_dict()
+        try:
+            svc.create_event("primary", data)
+            flash("Event created successfully.", "success")
+            return redirect(url_for("calendar.list_events", client_id=client_id))
+        except CalendarApiError as e:
+            flash(str(e), "danger")
+            return render_template(
+                "calendar/event_form.html",
+                client_id=client_id,
+                event=data,
+                action="Create",
+            )
+    return render_template(
+        "calendar/event_form.html", client_id=client_id, event=None, action="Create"
+    )
+
+
+@calendar_bp.route(
+    "/clients/<int:client_id>/calendars/events/<string:event_id>/edit",
+    methods=["GET", "POST"],
+)
+def edit_event(client_id: int, event_id: str) -> ResponseReturnValue:
+    svc = _get_service_or_redirect(client_id)
+    if svc is None:
+        return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    if request.method == "POST":
+        data = request.form.to_dict()
+        try:
+            svc.update_event("primary", event_id, data)
+            flash("Event updated successfully.", "success")
+            return redirect(url_for("calendar.list_events", client_id=client_id))
+        except CalendarApiError as e:
+            flash(str(e), "danger")
+            return render_template(
+                "calendar/event_form.html",
+                client_id=client_id,
+                event=data,
+                action="Edit",
+            )
+    # GET path
+    try:
+        event = svc.get_event("primary", event_id)
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+        return redirect(url_for("calendar.list_events", client_id=client_id))
+    return render_template(
+        "calendar/event_form.html", client_id=client_id, event=event, action="Edit"
+    )
+
+
+@calendar_bp.route(
+    "/clients/<int:client_id>/calendars/events/<string:event_id>/delete",
+    methods=["POST"],
+)
+def delete_event(client_id: int, event_id: str) -> ResponseReturnValue:
+    svc = _get_service_or_redirect(client_id)
+    if svc is None:
+        return redirect(url_for("calendar.list_calendars", client_id=client_id))
+    try:
+        svc.delete_event("primary", event_id)
+        flash("Event deleted successfully.", "success")
+    except CalendarApiError as e:
+        flash(str(e), "danger")
+    return redirect(url_for("calendar.list_events", client_id=client_id))
