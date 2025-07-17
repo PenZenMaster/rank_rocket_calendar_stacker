@@ -14,11 +14,12 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.11
+v1.12
 
 Comments:
 - Added project-level templates directory via `template_folder`
 - Ensured dict configs set SECRET_KEY, SERVER_NAME, and in-memory SQLite URI
+- Automatically push test request context to support url_for in tests
 - Preserves original string-based config loading
 """
 
@@ -37,35 +38,20 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     Args:
         config_obj (str | dict): Import path to config class or dict of config overrides.
     """
-    # Create app with templates folder at project root
+    # Set up project-level templates directory
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     templates_path = os.path.join(root, "templates")
     app = Flask(__name__, template_folder=templates_path)
-    # Monkey-patch flask.url_for to support URL building outside request context in tests
-    import flask
-
-    orig_url_for = flask.url_for
-
-    def safe_url_for(endpoint, *args, **kwargs):
-        try:
-            return orig_url_for(endpoint, *args, **kwargs)
-        except RuntimeError:
-            adapter = app.create_url_adapter(None)
-            if adapter is None:
-                # Fallback to original url_for to raise a meaningful error
-                return orig_url_for(endpoint, *args, **kwargs)
-            # Build URL outside request context using adapter
-            return adapter.build(endpoint, kwargs)
-
-    flask.url_for = safe_url_for
 
     # Support dict for test overrides
     if isinstance(config_obj, dict):
         app.config.update(config_obj)
-        # Testing defaults
         if app.config.get("TESTING"):
+            # Default database URI for testing
             app.config.setdefault("SQLALCHEMY_DATABASE_URI", "sqlite:///:memory:")
+            # Required for url_for outside request context
             app.config.setdefault("SERVER_NAME", "localhost")
+            # Required for session/flashes in tests
             app.config.setdefault("SECRET_KEY", "test-secret")
     else:
         app.config.from_object(config_obj)
@@ -74,6 +60,11 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     db.init_app(app)
     with app.app_context():
         db.create_all()
+
+    # In testing, push a test request context so url_for works
+    if app.config.get("TESTING"):
+        ctx = app.test_request_context()
+        ctx.push()
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
