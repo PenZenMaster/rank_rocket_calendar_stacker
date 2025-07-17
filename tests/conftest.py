@@ -16,11 +16,11 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.13
+v1.14
 
 Comments:
 - Hard-coded sys.path.insert for Windows to resolve `src` during pytest execution
-- Preload and configure all SQLAlchemy model mappers to avoid relationship resolution errors
+- Deferred SQLAlchemy model imports and `configure_mappers()` until inside test setup to avoid mapping resolution errors
 """
 
 import sys
@@ -28,28 +28,15 @@ import sys
 # Add full absolute path to src for Windows pytest compatibility
 sys.path.insert(0, r"E:\projects\rank_rocket_calendar_stacker\src")
 
-# Pre-load model modules and configure mappers before any test execution
-import src.models.client
-import src.models.oauth_credential
-from sqlalchemy.orm import configure_mappers
-
-configure_mappers()
-
 import pytest
 from src.main import create_app
 from src.extensions import db
-
-
-@pytest.fixture(autouse=True)
-def preload_models():
-    """Ensure SQLAlchemy mappers are configured before each test"""
-    # Re-run to pick up any late-bound relationships
-    configure_mappers()
+from sqlalchemy.orm import configure_mappers
 
 
 @pytest.fixture(scope="module")
 def app():
-    # Create Flask app with testing config
+    # Instantiate Flask app with testing config
     app = create_app("src.config.TestingConfig")
     yield app
 
@@ -57,12 +44,18 @@ def app():
 @pytest.fixture(scope="function", autouse=True)
 def setup_db(app):
     with app.app_context():
+        # Import models now to register mappers properly
+        from src.models.client import Client
+        from src.models.oauth_credential import OAuthCredential
+
+        # Configure all mappers after both classes are imported
+        configure_mappers()
+
+        # Recreate database schema
         db.drop_all()
         db.create_all()
 
-        # Populate test client with required google_email
-        from src.models.client import Client
-
+        # Seed a test client
         test_client = Client(
             name="Test Client",
             email="test@example.com",
@@ -73,6 +66,7 @@ def setup_db(app):
 
         yield
 
+        # Teardown
         db.session.remove()
         db.drop_all()
 
