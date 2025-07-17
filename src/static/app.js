@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Navigation functions
-function showSection(sectionName) {
+function showSection(sectionName, event) {
     // Hide all sections
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => {
@@ -51,7 +51,6 @@ function showAlert(message, type = 'info', containerId = 'globalAlerts') {
         </div>
     `;
     document.getElementById(containerId).innerHTML = alertHtml;
-    
     // Auto-dismiss after 5 seconds
     setTimeout(() => {
         const alert = document.querySelector(`#${containerId} .alert`);
@@ -79,13 +78,10 @@ async function apiCall(url, options = {}) {
             },
             ...options
         });
-        
         const data = await response.json();
-        
         if (!response.ok) {
             throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
-        
         return data;
     } catch (error) {
         console.error('API call failed:', error);
@@ -101,38 +97,42 @@ async function loadDashboard() {
     try {
         // Load clients count
         const clientsResponse = await apiCall('/api/clients');
-        const totalClients = clientsResponse.data ? clientsResponse.data.length : 0;
+        // clientsResponse is an array; use its length directly
+        const totalClients = Array.isArray(clientsResponse) ? clientsResponse.length : 0;
         document.getElementById('totalClients').textContent = totalClients;
         
         // TODO: Load other dashboard metrics
-        document.getElementById('activeEvents').textContent = '-';
-        document.getElementById('oauthStatus').textContent = '-';
-        
     } catch (error) {
         console.error('Failed to load dashboard:', error);
     }
 }
 
-// Client management functions
+// Clients functions
 async function loadClients() {
     try {
-        const response = await apiCall('/api/clients');
-        currentClients = response.data || [];
-        renderClientsTable();
+        const clients = await apiCall('/api/clients');
+        currentClients = clients;
+        const tbody = document.getElementById('clientsTableBody');
+        tbody.innerHTML = '';
+        clients.forEach(client => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${client.id}</td>
+                <td>${client.name}</td>
+                <td>${client.email}</td>
+                <td>${client.google_email || ''}</td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="showOAuthModal(${client.id})">OAuth</button>
+                    <button class="btn btn-sm btn-secondary" onclick="showEventModal(${client.id})">Events</button>
+                    <button class="btn btn-sm btn-warning" onclick="showEditClientModal(${client.id})">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteClient(${client.id})">Delete</button>
+                `;
+            tbody.appendChild(row);
+        });
     } catch (error) {
         console.error('Failed to load clients:', error);
-        document.getElementById('clientsTableBody').innerHTML = 
-            '<tr><td colspan="5" class="text-center text-danger">Failed to load clients</td></tr>';
     }
 }
-
-function renderClientsTable() {
-    const tbody = document.getElementById('clientsTableBody');
-    
-    if (currentClients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No clients found</td></tr>';
-        return;
-    }
     
     tbody.innerHTML = currentClients.map(client => `
         <tr>
@@ -154,7 +154,7 @@ function renderClientsTable() {
             </td>
         </tr>
     `).join('');
-}
+
 
 function showClientModal(clientId = null) {
     const modal = new bootstrap.Modal(document.getElementById('clientModal'));
