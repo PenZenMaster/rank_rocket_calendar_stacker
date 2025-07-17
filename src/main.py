@@ -13,7 +13,6 @@ Created Date:
 Last Modified Date:
 18-07-2025
 
-
 Version:
 v1.11
 
@@ -42,6 +41,23 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     templates_path = os.path.join(root, "templates")
     app = Flask(__name__, template_folder=templates_path)
+    # Monkey-patch flask.url_for to support URL building outside request context in tests
+    import flask
+
+    orig_url_for = flask.url_for
+
+    def safe_url_for(endpoint, *args, **kwargs):
+        try:
+            return orig_url_for(endpoint, *args, **kwargs)
+        except RuntimeError:
+            adapter = app.create_url_adapter(None)
+            if adapter is None:
+                # Fallback to original url_for to raise a meaningful error
+                return orig_url_for(endpoint, *args, **kwargs)
+            # Build URL outside request context using adapter
+            return adapter.build(endpoint, kwargs)
+
+    flask.url_for = safe_url_for
 
     # Support dict for test overrides
     if isinstance(config_obj, dict):
