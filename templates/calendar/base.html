@@ -1,0 +1,37 @@
+{#
+Module/Script Name: templates/base.html
+
+Description:
+Base Jinja template for the Rank Rocket Calendar Stacker application.
+
+Author(s):
+Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
+
+Created Date:
+19-07-2025
+
+Last Modified Date:
+19-07-2025
+
+Version:
+v1.00
+
+Comments:
+- Provides basic HTML5 skeleton with title and content blocks
+- Extended by individual page templates
+#}
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{% block title %}{% endblock %} | Rank Rocket Calendar Stacker</title>
+	<!-- Include your CSS here -->
+</head>
+
+<body>
+	{% block content %}{% endblock %}
+</body>
+
+</html>
