@@ -14,14 +14,12 @@ Last Modified Date:
 19-07-2025
 
 Version:
-v1.15
+v1.16
 
 Comments:
-This commit introduces several improvements to main.py to enhance the Flask application's structure and how it serves static content:
-Serve src/static/index.html at root: The health check endpoint (/) has been removed. Now, accessing the root URL will directly serve src/static/index.html.
-Consolidated static file serving: The serve function has been updated to handle all static file requests. It now correctly identifies the static folder and serves files from it, including index.html for the root path.
-Resolved NameError: name 'app' is not defined: The @app.route decorators and blueprint registrations were moved inside the create_app function. This ensures that the app object is properly defined before being used, resolving the NameError.
-Improved sys.path handling: The programmatic sys.path.insert logic has been refined to correctly add the project root to the Python path, ensuring modules within src are discoverable without manual PYTHONPATH configuration.
+This commit addresses a sqlite3.OperationalError: no such column that can occur when the Flask application starts and attempts to interact with the database. The root cause was that db.create_all() was not always aware of all defined SQLAlchemy models, leading to an incomplete database schema.
+To resolve this, the create_app function in src/main.py has been modified to explicitly import all models from src/models within the app.app_context() block, just before db.create_all() is called. This ensures that SQLAlchemy has discovered all model definitions, allowing it to correctly create or update the database schema with all necessary tables and columns (e.g., clients.email).
+This change improves the robustness of the application's database initialization process, especially in environments where the database file might be newly created or recreated.
 """
 
 import os
@@ -64,6 +62,9 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     # Initialize database
     db.init_app(app)
     with app.app_context():
+        # Ensure all models are imported so SQLAlchemy can find them
+        from src.models import client, oauth, oauth_credential, user, base
+
         db.create_all()
 
     # In testing mode, push a test request context to enable url_for
