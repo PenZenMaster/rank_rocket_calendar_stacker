@@ -14,7 +14,7 @@ Last Modified Date:
 19-07-2025
 
 Version:
-v1.18
+v1.19
 
 Comments:
 DB Troubleshooting
@@ -64,6 +64,13 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     with app.app_context():
         # Ensure all models are imported so SQLAlchemy can find them
         from src.models import client, oauth, oauth_credential, user, base
+
+        # Explicitly reload the client module to ensure latest definition is used
+        import importlib
+
+        importlib.reload(client)
+
+        print(f"Path of loaded client.py: {client.__file__}")
 
         db.create_all()
 
