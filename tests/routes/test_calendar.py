@@ -34,7 +34,9 @@ def app():
 
 @pytest.fixture
 def client(app):
-    return app.test_client()
+    with app.test_client() as client:
+        with app.app_context():
+            yield client
 
 @patch('src.routes.calendar.OAuthCredential')
 @patch('src.routes.calendar.GoogleCalendarService')
@@ -80,7 +82,12 @@ def test_edit_event_get_and_post(mock_service_cls, mock_cred_cls, client):
     mock_cred_cls.query.filter_by.return_value.first.return_value = mock_cred
     service = mock_service_cls.return_value
     # GET returns existing event
-    service.get_event.return_value = {'id':'evt1','summary':'Existing'}
+    service.get_event.return_value = {
+        'id':'evt1',
+        'summary':'Existing',
+        'start': {'dateTime': '2025-07-17T10:00:00Z'},
+        'end': {'dateTime': '2025-07-17T11:00:00Z'}
+    }
     resp_get = client.get(url_for('calendar.edit_event', client_id=1, event_id='evt1'))
     assert resp_get.status_code == 200
     assert b'Existing' in resp_get.data
