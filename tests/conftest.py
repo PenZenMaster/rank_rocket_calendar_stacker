@@ -12,19 +12,20 @@ Created Date:
 13-07-2025
 
 Last Modified Date:
-15-07-2025
+17-07-2025
 
 Version:
-v1.08
+v1.09
 
 Comments:
 - Hard-coded sys.path.insert for Windows to resolve `src` during pytest execution
+- Added `google_email` argument to `Client` fixture instantiation to satisfy required parameter
 """
 
 import sys
+
 # Add full absolute path to src for Windows pytest compatibility
 sys.path.insert(0, r"E:\\projects\\rank_rocket_calendar_stacker\\src")
-
 
 import pytest
 from src.main import create_app
@@ -47,7 +48,12 @@ def setup_db(app):
 
         from src.models.client import Client
 
-        test_client = Client(name="Test Client", email="test@example.com")
+        # Added google_email argument to satisfy required parameter
+        test_client = Client(
+            name="Test Client",
+            email="test@example.com",
+            google_email="test@example.com",
+        )
         db.session.add(test_client)
         db.session.commit()
 
