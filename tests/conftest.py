@@ -1,5 +1,6 @@
 """
-Module/Script Name: conftest.py
+Module/Script Name: tests/conftest.py
+Path: E:/projects/rank_rocket_calendar_stacker/tests/conftest.py
 
 Description:
 Pytest fixtures for Flask app and test database, plus test client definition.
@@ -15,25 +16,40 @@ Last Modified Date:
 17-07-2025
 
 Version:
-v1.09
+v1.13
 
 Comments:
 - Hard-coded sys.path.insert for Windows to resolve `src` during pytest execution
-- Added `google_email` argument to `Client` fixture instantiation to satisfy required parameter
+- Preload and configure all SQLAlchemy model mappers to avoid relationship resolution errors
 """
 
 import sys
 
 # Add full absolute path to src for Windows pytest compatibility
-sys.path.insert(0, r"E:\\projects\\rank_rocket_calendar_stacker\\src")
+sys.path.insert(0, r"E:\projects\rank_rocket_calendar_stacker\src")
+
+# Pre-load model modules and configure mappers before any test execution
+import src.models.client
+import src.models.oauth_credential
+from sqlalchemy.orm import configure_mappers
+
+configure_mappers()
 
 import pytest
 from src.main import create_app
 from src.extensions import db
 
 
+@pytest.fixture(autouse=True)
+def preload_models():
+    """Ensure SQLAlchemy mappers are configured before each test"""
+    # Re-run to pick up any late-bound relationships
+    configure_mappers()
+
+
 @pytest.fixture(scope="module")
 def app():
+    # Create Flask app with testing config
     app = create_app("src.config.TestingConfig")
     yield app
 
@@ -44,11 +60,9 @@ def setup_db(app):
         db.drop_all()
         db.create_all()
 
-        # Models are loaded via src.models import in main.py
-
+        # Populate test client with required google_email
         from src.models.client import Client
 
-        # Added google_email argument to satisfy required parameter
         test_client = Client(
             name="Test Client",
             email="test@example.com",
