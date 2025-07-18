@@ -12,13 +12,13 @@ Created Date:
 18-07-2025
 
 Last Modified Date:
-18-07-2025
+20-07-2025
 
 Version:
-v1.03
+v1.04
 
 Comments:
-- Uses in-memory SQLite when TESTING=True via create_app override
+- Uses a unique in-memory SQLite DB per test via UUID in URI to ensure isolation
 - Fixtures for app/client setup and teardown (drop schema before create)
 - Tests for:
   • GET /api/clients (empty and non-empty)
@@ -27,14 +27,18 @@ Comments:
 """
 
 import pytest
+import uuid
 from src.main import create_app
 from src.extensions import db
 
 
 @pytest.fixture
 def app():
-    # Create a Flask app configured for testing
-    app = create_app({"TESTING": True})
+    # Generate a unique in-memory database URI for isolation
+    unique_id = uuid.uuid4().hex
+    # SQLite URI for a shared in-memory DB with a unique name
+    db_uri = f"sqlite:///file:{unique_id}?mode=memory&cache=shared&uri=true"
+    app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": db_uri})
     with app.app_context():
         # Ensure a clean slate for each test run
         db.drop_all()
@@ -73,20 +77,22 @@ def test_create_client(client):
     # Now GET should return one client
     list_resp = client.get("/api/clients")
     assert list_resp.status_code == 200
-    assert isinstance(list_resp.get_json(), list)
-    assert any(c["id"] == data["id"] for c in list_resp.get_json())
+    clients = list_resp.get_json()
+    assert isinstance(clients, list)
+    assert len(clients) == 1
+    assert any(c["id"] == data["id"] for c in clients)
 
 
 def test_get_client_by_id(client):
-    # Create
+    # Create a client
     payload = {
         "name": "Foo",
         "email": "foo@bar.com",
         "google_account_email": "goo@bar.com",
     }
-    post = client.post("/api/clients", json=payload)
-    id_ = post.get_json()["id"]
-    # Retrieve
+    post_resp = client.post("/api/clients", json=payload)
+    id_ = post_resp.get_json()["id"]
+    # Retrieve the client
     get_resp = client.get(f"/api/clients/{id_}")
     assert get_resp.status_code == 200
     client_data = get_resp.get_json()
@@ -95,13 +101,15 @@ def test_get_client_by_id(client):
 
 
 def test_update_client(client):
+    # Setup: create a client
     payload = {
         "name": "Foo",
         "email": "foo@bar.com",
         "google_account_email": "goo@bar.com",
     }
-    post = client.post("/api/clients", json=payload)
-    id_ = post.get_json()["id"]
+    post_resp = client.post("/api/clients", json=payload)
+    id_ = post_resp.get_json()["id"]
+    # Perform update
     update = {
         "name": "Foo2",
         "email": "foo2@bar.com",
@@ -117,21 +125,23 @@ def test_update_client(client):
 
 
 def test_delete_client(client):
+    # Setup: create a client
     payload = {
         "name": "DelMe",
         "email": "del@me.com",
         "google_account_email": "del@google.com",
     }
-    post = client.post("/api/clients", json=payload)
-    id_ = post.get_json()["id"]
+    post_resp = client.post("/api/clients", json=payload)
+    id_ = post_resp.get_json()["id"]
+    # Delete the client
     del_resp = client.delete(f"/api/clients/{id_}")
     assert del_resp.status_code == 200
-    # Attempt to retrieve deleted client
+    # Verify deletion
     get_resp = client.get(f"/api/clients/{id_}")
     assert get_resp.status_code == 404
 
 
-# Edge case: invalid payload
+# Edge case: invalid payloads for client creation
 @pytest.mark.parametrize(
     "payload, error_msg",
     [
