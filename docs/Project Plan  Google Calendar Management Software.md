@@ -699,3 +699,43 @@ This project plan serves as a living document that should be regularly reviewed 
 | 13-07-2025 | 6     | Patched tests, OAuth model, config setup, debugging CI errors |
 | 14-07-2025 | 12    | Implement testing |
 
+### **Phase 1: Core MVP (Weeks 1–4)**
+1. **Project Setup & Infrastructure**
+   - Repository initialization, virtualenv, CI/CD pipeline, testing framework, folder structure
+2. **Client Management**
+   - CRUD endpoints (`/api/clients`) ✅
+   - Frontend UI for list/add/edit/delete clients ✅
+3. **OAuth Integration**
+   - OAuth2 flow: authorize, callback, token storage & refresh
+   - CRUD UI for credentials  ⚙️ *Edit Credentials wiring pending*
+4. **Event CRUD**
+   - Python wrapper for Google Calendar API
+   - REST endpoints for event create/edit/delete
+   - Frontend modal & table view  ⚙️ *Select Client, Select Calendar, Add Event wiring pending*
+
+### **Phase 2: Enhancements & Scalability (Weeks 5–8)**
+*(Not started)*
+
+### **Phase 3: Multi-User & Deployment (Weeks 9–10)**
+*(Not started)*
+
+---
+
+## **Current Status**
+- **Dashboard**: Displays total clients and active events correctly ✅
+- **Client CRUD**: Add, Edit, Delete all functioning ✅
+- **OAuth UI**: Add Credentials modal exists; **Edit Credentials** button does not yet populate data or save changes ⚙️
+- **Events Section**: UI elements rendered, but **Select Client**, **Select Calendar**, and **Add Event** actions are not wired to back-end ⚙️
+- **OAuth Settings Page**: Add Credentials functionality needs full wiring ⚙️
+
+---
+
+## **Next Tasks (Sprint Slice)**
+Please confirm priority order to tackle the remaining Phase 1 items:
+
+1. **Edit OAuth Credentials**: Populate modal with existing credential data, implement update flow via `/api/oauth/:id`.
+2. **Events CRUD UI**: 
+   - Wire **Select Client** dropdown to `/api/clients`
+   - Wire **Select Calendar** dropdown to `/api/clients/:id/calendars`
+   - Implement **Add Event** via `/api/clients/:id/calendars/:id/events`
+3. **OAuth Settings Add**: Complete save flow for new credentials via `/api/oauth`

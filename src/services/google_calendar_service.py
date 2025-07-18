@@ -49,6 +49,13 @@ class GoogleCalendarService:
         self.service: Any = None
         self._build_service()
 
+    def _update_stored_credentials(self, creds: Credentials) -> None:
+        """Persist refreshed credentials back to the database"""
+        self.oauth_credentials.access_token = creds.token
+        self.oauth_credentials.refresh_token = creds.refresh_token
+        self.oauth_credentials.scopes = json.dumps(creds.scopes)
+        # Commit should be handled by caller
+
     def _build_service(self) -> None:
         """Build the Google Calendar service with OAuth credentials"""
         try:
@@ -163,10 +170,3 @@ class GoogleCalendarService:
         except Exception as e:
             logger.error(f"Error in delete_event: {e}")
             return {"success": False, "error": str(e)}
-
-    def _update_stored_credentials(self, creds: Credentials) -> None:
-        """Persist refreshed credentials back to the database"""
-        self.oauth_credentials.access_token = creds.token
-        self.oauth_credentials.refresh_token = creds.refresh_token
-        self.oauth_credentials.scopes = json.dumps(creds.scopes)
-        # Commit should be handled by caller

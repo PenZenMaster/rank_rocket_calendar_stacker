@@ -1,9 +1,8 @@
 """
 Module/Script Name: src/models/client.py
-Path: E:/projects/rank_rocket_calendar_stacker/src/models/client.py
 
 Description:
-SQLAlchemy model for Client entities, including name, email, google_email, and OAuth credential relationship.
+SQLAlchemy model for Client entities, including name, email, google_email (aliased as google_account_email for API consistency), and OAuth credential relationship.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
@@ -12,14 +11,14 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-17-07-2025
+18-07-2025
 
 Version:
-v1.10
+v1.11
 
 Comments:
-- Directly import OAuthCredential class for relationship to avoid mapping resolution issues
-- Removed incorrect string path and replaced with class reference in `oauth_credentials` relationship
+- Added support for `google_account_email` keyword in `__init__` to match frontend API payload.
+- Updated `to_dict` to return `google_account_email` key for consistency with client-side code.
 """
 
 from src.extensions import db
@@ -32,6 +31,7 @@ class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    # Underlying column remains google_email, but aliased for API consistency
     google_email = db.Column(db.String(120), unique=True, nullable=False)
     oauth_credentials = db.relationship(
         "OAuthCredential",
@@ -40,11 +40,18 @@ class Client(db.Model):
         lazy=True,
     )
 
-    def __init__(self, name, email, google_email):
-        """Initialize a new Client."""
+    def __init__(self, name, email, google_email=None, google_account_email=None):
+        """
+        Initialize a new Client.
+
+        Accepts either `google_email` or `google_account_email` from API payload.
+        """
         self.name = name
         self.email = email
-        self.google_email = google_email
+        # Prefer google_account_email if provided by API, else use google_email
+        self.google_email = (
+            google_account_email if google_account_email is not None else google_email
+        )  # noqa: E501
 
     def __repr__(self):
         return f"<Client {self.name}>"
@@ -55,5 +62,6 @@ class Client(db.Model):
             "id": self.id,
             "name": self.name,
             "email": self.email,
-            "google_email": self.google_email,
+            # Return key matching frontend expectation
+            "google_account_email": self.google_email,
         }

@@ -11,29 +11,26 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-17-07-2025
+18-07-2025
 
 Version:
-v1.23
+v1.24
 
 Comments:
 - Supports dict-based config overrides, including Testing-specific defaults
-- Ensures db.init_app(app) is called exactly once in create_app
-- Schema management delegated fully to migrations or test fixtures
+- Ensures db.init_app(app) is called exactly once in create_app()
+- Registered new Events JSON-API blueprint
 """
 
 import os
-import sys
-
-# Ensure project root is on sys.path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from flask import Flask
+import logging
+from flask import Flask, send_from_directory
 from src.extensions import db
 from src.routes.oauth import oauth_bp
 from src.routes.oauth_flow import oauth_flow_bp
 from src.routes.calendar import calendar_bp
 from src.routes.client import client_bp
+from src.routes.events_api import events_bp  # <— new import
 
 
 def create_app(config_obj: str | dict = "src.config.Config"):
@@ -53,12 +50,6 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     else:
         app.config.from_object(config_obj)
 
-    # Testing-specific overrides: ensure in-memory DB and essentials
-    if app.config.get("TESTING"):
-        app.config.setdefault("SQLALCHEMY_DATABASE_URI", "sqlite:///:memory:")
-        app.config.setdefault("SERVER_NAME", "localhost")
-        app.config.setdefault("SECRET_KEY", "test-secret")
-
     # Initialize extensions
     db.init_app(app)
 
@@ -71,14 +62,12 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     app.register_blueprint(oauth_flow_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(client_bp)
+    app.register_blueprint(events_bp)  # <— new registration
 
     return app
 
 
 if __name__ == "__main__":
-    import logging
-    from flask import send_from_directory
-
     logging.basicConfig(level=logging.DEBUG)
     logging.debug("Starting Flask app...")
 

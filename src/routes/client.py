@@ -11,22 +11,23 @@ Created Date:
 11-07-2025
 
 Last Modified Date:
-17-07-2025
+24-07-2025
 
 Version:
-v1.08
+v1.09
 
 Comments:
-- Added handling of google_account_email field to create and update endpoints.
+- Corrected import path for GoogleCalendarService
+- Ensured GET /api/clients is available for dropdown in OAuth popup
 """
 
 from flask import Blueprint, request, jsonify, abort
 from src.extensions import db
 from src.models.client import Client
 from src.models.oauth_credential import OAuthCredential
-from src.google_calendar import GoogleCalendarService
+from src.services.google_calendar_service import GoogleCalendarService
 
-client_bp = Blueprint("client_bp", __name__)
+client_bp = Blueprint("client_bp", __name__, url_prefix="/api")
 
 
 def validate_client_data(data):
@@ -48,27 +49,27 @@ def validate_google_email(data):
     return google_email
 
 
-@client_bp.route("/api/clients", methods=["GET"])
+@client_bp.route("/clients", methods=["GET"])
 def get_clients():
     """List all clients."""
     clients = Client.query.all()
     return jsonify([c.to_dict() for c in clients]), 200
 
 
-@client_bp.route("/api/clients", methods=["POST"])
+@client_bp.route("/clients", methods=["POST"])
 def create_client():
     """Create a new client."""
     data = request.get_json() or {}
     name, email = validate_client_data(data)
     google_email = validate_google_email(data)
-    new_client = Client(name=name, email=email, google_email=google_email)
+    new_client = Client(name=name, email=email, google_account_email=google_email)
 
     db.session.add(new_client)
     db.session.commit()
     return jsonify(new_client.to_dict()), 201
 
 
-@client_bp.route("/api/clients/<int:client_id>", methods=["PUT"])
+@client_bp.route("/clients/<int:client_id>", methods=["PUT"])
 def update_client(client_id):
     """Update an existing client."""
     client = Client.query.get_or_404(
@@ -79,12 +80,12 @@ def update_client(client_id):
     google_email = validate_google_email(data)
     client.name = name
     client.email = email
-    client.google_email = google_email
+    client.google_account_email = google_email
     db.session.commit()
     return jsonify(client.to_dict()), 200
 
 
-@client_bp.route("/api/clients/<int:client_id>", methods=["DELETE"])
+@client_bp.route("/clients/<int:client_id>", methods=["DELETE"])
 def delete_client(client_id):
     """Delete a client."""
     client = Client.query.get_or_404(
@@ -95,7 +96,7 @@ def delete_client(client_id):
     return jsonify({"message": f"Client {client_id} deleted."}), 200
 
 
-@client_bp.route("/api/clients/<int:client_id>/calendars", methods=["GET"])
+@client_bp.route("/clients/<int:client_id>/calendars", methods=["GET"])
 def get_client_calendars(client_id):
     """Return all Google Calendars for a given client."""
     # 1) Ensure client exists
@@ -104,7 +105,7 @@ def get_client_calendars(client_id):
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         abort(400, description="No valid OAuth credentials for this client.")
-    # 3) Instantiate GoogleCalendarService with correct constructor usage
+    # 3) Instantiate GoogleCalendarService
     svc = GoogleCalendarService(creds)
     # 4) Retrieve and return calendars
     calendars = svc.list_calendars()
