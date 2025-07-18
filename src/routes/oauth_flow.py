@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 
 from flask import Blueprint, redirect, request, url_for, session
 from google_auth_oauthlib.flow import Flow
-from src.models.oauth import OAuthCredential
+from src.models.oauth_credential import OAuthCredential
 from src.extensions import db
 
 import pathlib

@@ -34,7 +34,7 @@ class Client(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     google_email = db.Column(db.String(120), unique=True, nullable=False)
     oauth_credentials = db.relationship(
-        OAuthCredential,
+        "OAuthCredential",
         back_populates="client",
         cascade="all, delete-orphan",
         lazy=True,

@@ -25,7 +25,7 @@ Comments:
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask.typing import ResponseReturnValue
-from src.models.oauth import OAuthCredential
+from src.models.oauth_credential import OAuthCredential
 from src.google_calendar import GoogleCalendarService, CalendarApiError
 
 calendar_bp = Blueprint("calendar", __name__)

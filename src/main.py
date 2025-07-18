@@ -14,7 +14,7 @@ Last Modified Date:
 19-07-2025
 
 Version:
-v1.19
+v1.20
 
 Comments:
 DB Troubleshooting
@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask
 from src.extensions import db
-from src.routes.oauth import oauth_bp
+from src.routes.oauth import oauth_bp  # ✅ CORRECT - import from routes
 from src.routes.oauth_flow import oauth_flow_bp
 from src.routes.calendar import calendar_bp
 from src.routes.client import client_bp
@@ -60,7 +60,7 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     db.init_app(app)
     with app.app_context():
         # Ensure all models are imported so SQLAlchemy can find them
-        from src.models import client, oauth, oauth_credential, user, base
+        from src.models import client, oauth_credential, user, base
 
         print(
             f"Attempting to create tables in: {app.config.get("SQLALCHEMY_DATABASE_URI")}"
