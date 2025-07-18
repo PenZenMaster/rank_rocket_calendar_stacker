@@ -15,7 +15,7 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.01
+v1.03
 
 Comments:
 - Uses in-memory SQLite when TESTING=True via create_app override
@@ -40,9 +40,9 @@ def app():
         db.drop_all()
         db.create_all()
         yield app
-    # Teardown: remove session and drop all tables
-    db.session.remove()
-    db.drop_all()
+        # Teardown: remove session and drop all tables
+        db.session.remove()
+        db.drop_all()
 
 
 @pytest.fixture
