@@ -17,6 +17,9 @@ Comments:
 - v1.00: Declared Base model using SQLAlchemy declarative_base
 """
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import (
+    declarative_base,
+)  ## ✅ CORRECT - import declarative_base from sqlalchemy.orm
+
 
 Base = declarative_base()
