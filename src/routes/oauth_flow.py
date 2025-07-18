@@ -5,19 +5,19 @@ Description:
 Handles OAuth 2.0 redirect and callback logic for authorization flow
 
 Author(s):
-Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
+Skippy the Magnificent with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
 14-07-2025
 
 Last Modified Date:
-15-07-2025
+22-07-2025
 
 Version:
-v1.09
+v1.10
 
 Comments:
-- Replaced deprecated Model.query.get(id) with db.session.get(Model, id) for SQLAlchemy 2.0 compatibility
+- Redirect to '/clients' after successful OAuth callback so client list is displayed in the UI
 """
 
 import sys
@@ -103,4 +103,5 @@ def callback():
     oauth_entry.access_token = credentials.token
     db.session.commit()
 
-    return redirect("/")
+    # Redirect back to the client list UI
+    return redirect("/clients")

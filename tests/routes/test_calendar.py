@@ -11,26 +11,29 @@ Created Date:
 17-07-2025
 
 Last Modified Date:
-17-07-2025
+19-07-2025
 
 Version:
-v1.00
+v1.03
 
 Comments:
-- Tests mock OAuthCredential and GoogleCalendarService
-- Covers GET and POST flows for list, create, edit, delete routes
+- Adjusted URL paths to match calendar_bp route prefixes under /clients/<client_id>/calendars
+- Added secret_key to app fixture to enable session for flash messages
 """
 
 import pytest
 from unittest.mock import patch, MagicMock
-from flask import url_for
-from src.main import create_app  # assumption: factory returns Flask app
+from src.main import create_app  # factory returns Flask app
+
 
 @pytest.fixture
 def app():
-    app = create_app({'TESTING': True})
+    # Initialize Flask app with TESTING and session support
+    app = create_app({"TESTING": True})
+    app.secret_key = "test-secret-key"
     with app.app_context():
         yield app
+
 
 @pytest.fixture
 def client(app):
@@ -38,71 +41,92 @@ def client(app):
         with app.app_context():
             yield client
 
-@patch('src.routes.calendar.OAuthCredential')
-@patch('src.routes.calendar.GoogleCalendarService')
+
+@patch("src.routes.calendar.OAuthCredential")
+@patch("src.routes.calendar.GoogleCalendarService")
 def test_list_calendars_success(mock_service_cls, mock_cred_cls, client):
     # Setup mock credential lookup
     mock_cred = MagicMock(is_valid=True)
     mock_cred_cls.query.filter_by.return_value.first.return_value = mock_cred
     # Setup service.list_calendars
     service = mock_service_cls.return_value
-    service.list_calendars.return_value = [{'id':'cal1','summary':'Cal 1'}]
+    service.list_calendars.return_value = [{"id": "cal1", "summary": "Cal 1"}]
 
-    resp = client.get(url_for('calendar.list_calendars', client_id=1))
+    # Use actual route: GET /clients/1/calendars
+    resp = client.get("/clients/1/calendars")
     assert resp.status_code == 200
-    assert b'Cal 1' in resp.data
+    assert b"Cal 1" in resp.data
 
-@patch('src.routes.calendar.OAuthCredential')
-@patch('src.routes.calendar.GoogleCalendarService')
+
+@patch("src.routes.calendar.OAuthCredential")
+@patch("src.routes.calendar.GoogleCalendarService")
 def test_list_calendars_no_cred(mock_service_cls, mock_cred_cls, client):
-    # No credentials found → redirect
+    # No credentials found → redirect to client list
     mock_cred_cls.query.filter_by.return_value.first.return_value = None
-    resp = client.get(url_for('calendar.list_calendars', client_id=1), follow_redirects=False)
+    resp = client.get("/clients/1/calendars", follow_redirects=False)
     assert resp.status_code == 302
-    assert '/clients' in resp.headers['Location']
+    assert "/clients" in resp.headers["Location"]
 
-@patch('src.routes.calendar.OAuthCredential')
-@patch('src.routes.calendar.GoogleCalendarService')
+
+@patch("src.routes.calendar.OAuthCredential")
+@patch("src.routes.calendar.GoogleCalendarService")
 def test_create_event_post(mock_service_cls, mock_cred_cls, client):
     # Setup valid cred and service
     mock_cred = MagicMock(is_valid=True)
     mock_cred_cls.query.filter_by.return_value.first.return_value = mock_cred
     service = mock_service_cls.return_value
-    service.create_event.return_value = {'id':'evt1'}
+    service.create_event.return_value = {"id": "evt1"}
 
-    data = {'summary':'Test','start':'2025-07-17T10:00','end':'2025-07-17T11:00'}
-    resp = client.post(url_for('calendar.create_event', client_id=1), data=data, follow_redirects=True)
+    data = {"summary": "Test", "start": "2025-07-17T10:00", "end": "2025-07-17T11:00"}
+    # Use actual route: POST /clients/1/calendars/events/new
+    resp = client.post(
+        "/clients/1/calendars/events/new", data=data, follow_redirects=True
+    )
     assert resp.status_code == 200
-    assert b'Event created successfully' in resp.data
+    assert b"Event created successfully" in resp.data
 
-@patch('src.routes.calendar.OAuthCredential')
-@patch('src.routes.calendar.GoogleCalendarService')
+
+@patch("src.routes.calendar.OAuthCredential")
+@patch("src.routes.calendar.GoogleCalendarService")
 def test_edit_event_get_and_post(mock_service_cls, mock_cred_cls, client):
+    # Setup valid cred and service
     mock_cred = MagicMock(is_valid=True)
     mock_cred_cls.query.filter_by.return_value.first.return_value = mock_cred
     service = mock_service_cls.return_value
     # GET returns existing event
     service.get_event.return_value = {
-        'id':'evt1',
-        'summary':'Existing',
-        'start': {'dateTime': '2025-07-17T10:00:00Z'},
-        'end': {'dateTime': '2025-07-17T11:00:00Z'}
+        "id": "evt1",
+        "summary": "Existing",
+        "start": {"dateTime": "2025-07-17T10:00:00Z"},
+        "end": {"dateTime": "2025-07-17T11:00:00Z"},
     }
-    resp_get = client.get(url_for('calendar.edit_event', client_id=1, event_id='evt1'))
+    # Actual route: GET /clients/1/calendars/events/evt1/edit
+    resp_get = client.get("/clients/1/calendars/events/evt1/edit")
     assert resp_get.status_code == 200
-    assert b'Existing' in resp_get.data
-    # POST updates
-    data = {'summary':'Updated','start':'2025-07-17T12:00','end':'2025-07-17T13:00'}
-    resp_post = client.post(url_for('calendar.edit_event', client_id=1, event_id='evt1'), data=data, follow_redirects=True)
-    assert resp_post.status_code == 200
-    assert b'Event updated successfully' in resp_post.data
+    assert b"Existing" in resp_get.data
 
-@patch('src.routes.calendar.OAuthCredential')
-@patch('src.routes.calendar.GoogleCalendarService')
+    # POST updates via same URL
+    data = {
+        "summary": "Updated",
+        "start": "2025-07-17T12:00",
+        "end": "2025-07-17T13:00",
+    }
+    resp_post = client.post(
+        "/clients/1/calendars/events/evt1/edit", data=data, follow_redirects=True
+    )
+    assert resp_post.status_code == 200
+    assert b"Event updated successfully" in resp_post.data
+
+
+@patch("src.routes.calendar.OAuthCredential")
+@patch("src.routes.calendar.GoogleCalendarService")
 def test_delete_event(mock_service_cls, mock_cred_cls, client):
+    # Setup valid cred and service
     mock_cred = MagicMock(is_valid=True)
     mock_cred_cls.query.filter_by.return_value.first.return_value = mock_cred
     service = mock_service_cls.return_value
-    resp = client.post(url_for('calendar.delete_event', client_id=1, event_id='evt1'), follow_redirects=True)
+
+    # Use actual route: POST /clients/1/calendars/events/evt1/delete
+    resp = client.post("/clients/1/calendars/events/evt1/delete", follow_redirects=True)
     assert resp.status_code == 200
-    assert b'Event deleted successfully' in resp.data
+    assert b"Event deleted successfully" in resp.data
