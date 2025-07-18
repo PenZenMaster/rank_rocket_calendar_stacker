@@ -14,10 +14,10 @@ Last Modified Date:
 22-07-2025
 
 Version:
-v1.10
+v1.11
 
 Comments:
-- Redirect to '/clients' after successful OAuth callback so client list is displayed in the UI
+- Redirect to '/lients' after successful OAuth callback so client list is displayed in the UI
 """
 
 import sys
@@ -104,4 +104,4 @@ def callback():
     db.session.commit()
 
     # Redirect back to the client list UI
-    return redirect("/clients")
+    return redirect("/")
