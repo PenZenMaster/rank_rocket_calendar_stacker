@@ -19,7 +19,7 @@ v1.03
 
 Comments:
 - Uses in-memory SQLite when TESTING=True via create_app override
-- Fixtures for app/client setup and teardown
+- Fixtures for app/client setup and teardown (drop schema before create)
 - Tests for:
   • GET /api/clients (empty and non-empty)
   • POST /api/clients (valid and invalid payloads)
