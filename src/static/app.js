@@ -2,7 +2,7 @@
 Module/Script Name: src/app.js
 
 Description:
-Frontend JavaScript for Rank Rocket Calendar Stacker. Handles dashboard, clients, OAuth (Settings) UI/API interactions, including full Add OAuth Credentials flow.
+Frontend JavaScript for Rank Rocket Calendar Stacker. Handles dashboard, clients, OAuth (Settings) UI/API interactions, including full Add OAuth Credentials flow and Event CRUD wiring.
 
 Author(s):
 Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
@@ -11,15 +11,14 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-19-07-2025
+18-07-2025
 
 Version:
-v1.14
+v1.15
 
 Comments:
-- Implemented saveOAuthCredentials using centralized apiCall.
-- Wired Add OAuth Credentials button to POST `/api/oauth` and refresh table.
-- Implemented loadOAuthCredentials to GET `/api/oauth` and render credentials table.
+- Added event CRUD: loadCalendars, loadEvents, showEventModal, saveEvent, deleteEvent
+- Wired client and calendar selects to API JSON endpoints.
 */
 
 // Global variables
@@ -49,7 +48,9 @@ function showSection(sectionName, event) {
             loadClients();
             break;
         case 'events':
-            // events wiring pending
+            loadClients();
+            loadCalendars();
+            loadEvents();
             break;
         case 'oauth':
             loadClientsForOAuth();
@@ -195,4 +196,124 @@ async function loadOAuthCredentials() {
     }
 }
 
-// ... rest of client/event code remains unchanged ...
+// Events CRUD
+async function loadCalendars() {
+    const clientId = document.getElementById('clientSelect').value;
+    const calSelect = document.getElementById('calendarSelect');
+    calSelect.innerHTML = '<option value="">Select a calendar.</option>';
+    if (!clientId) return;
+    try {
+        const resp = await apiCall(`/api/clients/${clientId}/calendars`);
+        currentCalendars = Array.isArray(resp.data) ? resp.data : [];
+        currentCalendars.forEach(cal => {
+            const opt = document.createElement('option');
+            opt.value = cal.id;
+            opt.textContent = cal.summary;
+            calSelect.appendChild(opt);
+        });
+    } catch (error) {
+        console.error('Failed to load calendars:', error);
+    }
+}
+
+async function loadEvents() {
+    const clientId = document.getElementById('clientSelect').value;
+    const calendarId = document.getElementById('calendarSelect').value;
+    const container = document.getElementById('eventsContainer');
+    container.innerHTML = '';
+    if (!clientId || !calendarId) {
+        container.innerHTML = '<p class="text-muted">Select a client and calendar to view events.</p>';
+        return;
+    }
+    try {
+        const resp = await apiCall(`/api/clients/${clientId}/calendars/${calendarId}/events`);
+        currentEvents = Array.isArray(resp.data) ? resp.data : [];
+        if (currentEvents.length === 0) {
+            container.innerHTML = '<p class="text-muted">No events found.</p>';
+            return;
+        }
+        let html = '<table class="table table-striped"><thead><tr><th>Summary</th><th>Start</th><th>End</th><th>Actions</th></tr></thead><tbody>';
+        currentEvents.forEach(evt => {
+            const start = evt.start.dateTime || evt.start.date;
+            const end = evt.end.dateTime || evt.end.date;
+            html += `<tr>
+                <td>${evt.summary}</td>
+                <td>${new Date(start).toLocaleString()}</td>
+                <td>${new Date(end).toLocaleString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary me-1" onclick="showEventModal('${evt.id}')">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteEvent('${evt.id}')">Delete</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Failed to load events:', error);
+    }
+}
+
+function showEventModal(eventId = null) {
+    const modalEl = document.getElementById('eventModal');
+    const modal = new bootstrap.Modal(modalEl);
+    const title = document.getElementById('eventModalTitle');
+    document.getElementById('eventForm').reset();
+    document.getElementById('eventId').value = eventId || '';
+    if (eventId) {
+        title.textContent = 'Edit Event';
+        const clientId = document.getElementById('clientSelect').value;
+        const calendarId = document.getElementById('calendarSelect').value;
+        apiCall(`/api/clients/${clientId}/calendars/${calendarId}/events/${eventId}`)
+            .then(resp => {
+                const evt = resp.data;
+                document.getElementById('eventSummary').value = evt.summary || '';
+                document.getElementById('eventStart').value = evt.start.dateTime || evt.start.date;
+                document.getElementById('eventEnd').value = evt.end.dateTime || evt.end.date;
+            })
+            .catch(err => console.error('Failed to load event for editing:', err));
+    } else {
+        title.textContent = 'Add Event';
+    }
+    modal.show();
+}
+
+async function saveEvent() {
+    const id = document.getElementById('eventId').value;
+    const clientId = document.getElementById('clientSelect').value;
+    const calendarId = document.getElementById('calendarSelect').value;
+    const summary = document.getElementById('eventSummary').value;
+    const start = document.getElementById('eventStart').value;
+    const end = document.getElementById('eventEnd').value;
+    if (!clientId || !calendarId || !summary || !start || !end) {
+        showAlert('Please fill in all required fields for the event.', 'danger');
+        return;
+    }
+    const payload = { summary, start: { dateTime: start }, end: { dateTime: end } };
+    try {
+        const method = id ? 'PUT' : 'POST';
+        const endpoint = id
+            ? `/api/clients/${clientId}/calendars/${calendarId}/events/${id}`
+            : `/api/clients/${clientId}/calendars/${calendarId}/events`;
+        const resp = await apiCall(endpoint, { method, body: JSON.stringify(payload) });
+        showAlert(resp.message || 'Event saved', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide();
+        loadEvents();
+    } catch (error) {
+        console.error('Failed to save event:', error);
+    }
+}
+
+async function deleteEvent(eventId) {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+    const clientId = document.getElementById('clientSelect').value;
+    const calendarId = document.getElementById('calendarSelect').value;
+    try {
+        const resp = await apiCall(`/api/clients/${clientId}/calendars/${calendarId}/events/${eventId}`, { method: 'DELETE' });
+        showAlert(resp.message || 'Event deleted', 'warning');
+        loadEvents();
+    } catch (error) {
+        console.error('Failed to delete event:', error);
+    }
+}
+
+// The rest of client & settings code remains unchanged.
