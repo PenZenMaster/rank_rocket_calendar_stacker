@@ -15,7 +15,7 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.00
+v1.01
 
 Comments:
 - Uses in-memory SQLite when TESTING=True via create_app override
@@ -36,10 +36,13 @@ def app():
     # Create a Flask app configured for testing
     app = create_app({"TESTING": True})
     with app.app_context():
+        # Ensure a clean slate for each test run
+        db.drop_all()
         db.create_all()
         yield app
-        db.session.remove()
-        db.drop_all()
+    # Teardown: remove session and drop all tables
+    db.session.remove()
+    db.drop_all()
 
 
 @pytest.fixture
