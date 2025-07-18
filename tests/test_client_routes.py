@@ -12,13 +12,15 @@ Created Date:
 18-07-2025
 
 Last Modified Date:
-20-07-2025
+25-07-2025
 
 Version:
-v1.04
+v1.07
 
 Comments:
+- Overrides global setup_db autouse fixture to prevent seeding of default client
 - Uses a unique in-memory SQLite DB per test via UUID in URI to ensure isolation
+- Disposes SQLAlchemy engine at teardown to close all connections and avoid ResourceWarnings
 - Fixtures for app/client setup and teardown (drop schema before create)
 - Tests for:
   • GET /api/clients (empty and non-empty)
@@ -32,11 +34,17 @@ from src.main import create_app
 from src.extensions import db
 
 
+# Override conftest's setup_db to disable default client seeding
+@pytest.fixture(scope="function", autouse=True)
+def setup_db(app):
+    # no-op override to skip seeding from conftest
+    yield
+
+
 @pytest.fixture
 def app():
     # Generate a unique in-memory database URI for isolation
     unique_id = uuid.uuid4().hex
-    # SQLite URI for a shared in-memory DB with a unique name
     db_uri = f"sqlite:///file:{unique_id}?mode=memory&cache=shared&uri=true"
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": db_uri})
     with app.app_context():
@@ -47,6 +55,9 @@ def app():
         # Teardown: remove session and drop all tables
         db.session.remove()
         db.drop_all()
+        # Dispose engine to close all SQLite connections
+        engine = db.get_engine(app=app)
+        engine.dispose()
 
 
 @pytest.fixture
@@ -84,7 +95,6 @@ def test_create_client(client):
 
 
 def test_get_client_by_id(client):
-    # Create a client
     payload = {
         "name": "Foo",
         "email": "foo@bar.com",
@@ -92,7 +102,6 @@ def test_get_client_by_id(client):
     }
     post_resp = client.post("/api/clients", json=payload)
     id_ = post_resp.get_json()["id"]
-    # Retrieve the client
     get_resp = client.get(f"/api/clients/{id_}")
     assert get_resp.status_code == 200
     client_data = get_resp.get_json()
@@ -101,7 +110,6 @@ def test_get_client_by_id(client):
 
 
 def test_update_client(client):
-    # Setup: create a client
     payload = {
         "name": "Foo",
         "email": "foo@bar.com",
@@ -109,7 +117,6 @@ def test_update_client(client):
     }
     post_resp = client.post("/api/clients", json=payload)
     id_ = post_resp.get_json()["id"]
-    # Perform update
     update = {
         "name": "Foo2",
         "email": "foo2@bar.com",
@@ -125,7 +132,6 @@ def test_update_client(client):
 
 
 def test_delete_client(client):
-    # Setup: create a client
     payload = {
         "name": "DelMe",
         "email": "del@me.com",
@@ -133,10 +139,8 @@ def test_delete_client(client):
     }
     post_resp = client.post("/api/clients", json=payload)
     id_ = post_resp.get_json()["id"]
-    # Delete the client
     del_resp = client.delete(f"/api/clients/{id_}")
     assert del_resp.status_code == 200
-    # Verify deletion
     get_resp = client.get(f"/api/clients/{id_}")
     assert get_resp.status_code == 404
 
