@@ -17,7 +17,7 @@ Version:
 v1.11
 
 Comments:
-- Redirect to '/lients' after successful OAuth callback so client list is displayed in the UI
+- Redirect to '/' after successful OAuth callback so client list is displayed in the UI
 """
 
 import sys
