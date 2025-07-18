@@ -14,12 +14,13 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.24
+v1.25
 
 Comments:
 - Supports dict-based config overrides, including Testing-specific defaults
 - Ensures db.init_app(app) is called exactly once in create_app()
 - Registered new Events JSON-API blueprint
+- Added automatic in-memory SQLite DB when TESTING without URI
 """
 
 import os
@@ -40,13 +41,23 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     Args:
         config_obj (str | dict): Import path to config class or dict of config overrides.
     """
+    # Determine application root and templates path
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     templates_path = os.path.join(root, "templates")
     app = Flask(__name__, template_folder=templates_path)
 
-    # Load configuration (object or dict)
+    # Load configuration
     if isinstance(config_obj, dict):
+        # Always load default config first to ensure required keys (e.g., DB URI)
+        from src.config import Config
+
+        app.config.from_object(Config)
+        # Override with provided dict values
         app.config.update(config_obj)
+        # If running tests and no DB URI specified, use in-memory SQLite
+        if app.config.get("TESTING") and not app.config.get("SQLALCHEMY_DATABASE_URI"):
+            app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+            app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     else:
         app.config.from_object(config_obj)
 
@@ -62,7 +73,7 @@ def create_app(config_obj: str | dict = "src.config.Config"):
     app.register_blueprint(oauth_flow_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(client_bp)
-    app.register_blueprint(events_bp)  # <— new registration
+    app.register_blueprint(events_bp)
 
     return app
 
