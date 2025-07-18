@@ -14,13 +14,13 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.25
+v1.26
 
 Comments:
 - Supports dict-based config overrides, including Testing-specific defaults
 - Ensures db.init_app(app) is called exactly once in create_app()
 - Registered new Events JSON-API blueprint
-- Added automatic in-memory SQLite DB when TESTING without URI
+- Always uses in-memory SQLite DB when TESTING=True
 """
 
 import os
@@ -48,14 +48,14 @@ def create_app(config_obj: str | dict = "src.config.Config"):
 
     # Load configuration
     if isinstance(config_obj, dict):
-        # Always load default config first to ensure required keys (e.g., DB URI)
+        # Load default config to get baseline values
         from src.config import Config
 
         app.config.from_object(Config)
-        # Override with provided dict values
+        # Override with provided dict, e.g. TESTING
         app.config.update(config_obj)
-        # If running tests and no DB URI specified, use in-memory SQLite
-        if app.config.get("TESTING") and not app.config.get("SQLALCHEMY_DATABASE_URI"):
+        # Always use in-memory SQLite for testing
+        if app.config.get("TESTING"):
             app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
             app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     else:
