@@ -633,109 +633,85 @@ Key strengths of this approach include:
 
 This project plan serves as a living document that should be regularly reviewed and updated based on development progress, user feedback, and changing requirements. The success of this project will depend on careful execution of the plan, continuous communication with stakeholders, and adaptability to emerging challenges and opportunities.
 
----
 
-**Document Information**
+1.1 Completed (Phase 1 MVP)
 
-# Project Plan: Google Calendar Management Software
+Project Setup & Infrastructure
 
-## Phase 1: Project Bootstrapping and Setup
+Initialized Git repo, Flask app factory, SQLAlchemy, pytest, coverage, CI pipeline.
 
-### ✅ Completed:
-- Repository initialized and pushed to GitHub: [https://github.com/PenZenMaster/rank_rocket_calendar_stacker](https://github.com/PenZenMaster/rank_rocket_calendar_stacker)
-- Directory structure organized using `src/` and `tests/`
-- `Flask` application factory pattern implemented
-- `pytest` configured with coverage reporting
-- Basic test suite scaffolded and passing
+Client Management
 
-## Phase 2: OAuth Routes, Models, and Unit Tests
+CRUD JSON API (/api/clients), server-side validation, JSON error handlers.
 
-### ✅ Completed:
-- `OAuthCredential` model defined with required fields
-- OAuth flow (`/authorize/<oauth_id>` and `/callback`) implemented using `google-auth-oauthlib`
-- Routes registered under blueprint `oauth_flow_bp`
-- Unit tests written for both `/authorize` and `/callback` routes
-- Test isolation with `app.test_client()` and scoped SQLite test DB
-- Warnings eliminated (removed `.query.get()` in favor of `db.session.get()`)
-- Clean test teardown with `teardown_appcontext`
-- Full test suite runs with 4 passing tests and 45% total coverage
+Unit tests for client routes (GET, POST, PUT, DELETE), all passing.
 
-## Phase 3: Calendar Integration Layer (**Next**)
+Frontend client UI wired to these endpoints.
 
-### 🔜 Tasks:
-- Implement Google Calendar Service Wrapper
-  - `create_event`, `get_event`, `update_event`, `delete_event`, `list_events`
-- Secure authenticated API interaction using stored `OAuthCredential`
-- Integrate `googleapiclient.discovery.build` logic
-- Handle credential refresh and token expiry
-- Write unit tests with mocked Google API responses
-- Achieve 90%+ test coverage for integration layer
+OAuth Integration
 
-## Phase 4: UI Restoration and OAuth Completion
+Endpoints: /oauth/authorize/<id>, /oauth/callback implemented.
 
-### 🔜 Tasks:
-- Reconnect working UI to Flask routes
-- Ensure OAuth redirect/callback properly drives token storage
-- Verify token availability in UI context
-- End-to-end manual QA validation
+Credential persistence and callback redirect fixed.
 
-## Phase 5: Deployment and Monitoring
+Unit tests for OAuth flow endpoints, all passing.
 
-### 🔜 Tasks:
-- Dockerize Flask app and database
-- Deploy to Heroku or Render with Postgres
-- Set up monitoring/logging (e.g., Sentry or Logtail)
-- Schedule weekly cron for calendar sync validation
+Event CRUD Wiring
 
----
+Frontend: loadCalendars, loadEvents, showEventModal, saveEvent, deleteEvent.
 
-**Maintainer:** Skippy the Code Slayer (with Big G's furious keystrokes)
-**Last Updated:** 15-07-2025
+Modal markup added to index.html.
 
-## Time Log
+Backend JSON API for events (list, create, get, update, delete).
 
-| Date       | Hours | Tasks Completed                                |
-|------------|-------|------------------------------------------------|
-| 13-07-2025 | 6     | Patched tests, OAuth model, config setup, debugging CI errors |
-| 14-07-2025 | 12    | Implement testing |
+Service Layer
 
-### **Phase 1: Core MVP (Weeks 1–4)**
-1. **Project Setup & Infrastructure**
-   - Repository initialization, virtualenv, CI/CD pipeline, testing framework, folder structure
-2. **Client Management**
-   - CRUD endpoints (`/api/clients`) ✅
-   - Frontend UI for list/add/edit/delete clients ✅
-3. **OAuth Integration**
-   - OAuth2 flow: authorize, callback, token storage & refresh
-   - CRUD UI for credentials  ⚙️ *Edit Credentials wiring pending*
-4. **Event CRUD**
-   - Python wrapper for Google Calendar API
-   - REST endpoints for event create/edit/delete
-   - Frontend modal & table view  ⚙️ *Select Client, Select Calendar, Add Event wiring pending*
+GoogleCalendarService methods covered by unit tests (retries, error handling).
 
-### **Phase 2: Enhancements & Scalability (Weeks 5–8)**
-*(Not started)*
+1.2 In Progress / Sprint Slice
 
-### **Phase 3: Multi-User & Deployment (Weeks 9–10)**
-*(Not started)*
+OAuth Settings UI
 
----
+Populate and update existing credentials via PUT /api/oauth/:id.
 
-## **Current Status**
-- **Dashboard**: Displays total clients and active events correctly ✅
-- **Client CRUD**: Add, Edit, Delete all functioning ✅
-- **OAuth UI**: Add Credentials modal exists; **Edit Credentials** button does not yet populate data or save changes ⚙️
-- **Events Section**: UI elements rendered, but **Select Client**, **Select Calendar**, and **Add Event** actions are not wired to back-end ⚙️
-- **OAuth Settings Page**: Add Credentials functionality needs full wiring ⚙️
+Display token status cards on Dashboard.
 
----
+Event API Tests
 
-## **Next Tasks (Sprint Slice)**
-Please confirm priority order to tackle the remaining Phase 1 items:
+Write pytest modules for src/routes/events_api.py.
 
-1. **Edit OAuth Credentials**: Populate modal with existing credential data, implement update flow via `/api/oauth/:id`.
-2. **Events CRUD UI**: 
-   - Wire **Select Client** dropdown to `/api/clients`
-   - Wire **Select Calendar** dropdown to `/api/clients/:id/calendars`
-   - Implement **Add Event** via `/api/clients/:id/calendars/:id/events`
-3. **OAuth Settings Add**: Complete save flow for new credentials via `/api/oauth`
+Calendar & OAuth Route Tests
+
+Add coverage for routes/calendar.py and routes/oauth.py.
+
+1.3 Backlog / Future Rounds
+
+Suppress ResourceWarnings
+
+Dispose SQLAlchemy engines or configure NullPool to eliminate unclosed DB warnings.
+
+Broad Test Coverage
+
+Cover models/base.py, services/*, edge-case validations, malformed payloads.
+
+Goal: ≥85% code coverage.
+
+Refactor & Cleanup
+
+Upgrade deprecated patterns (e.g., replace db.get_engine, .query.get with session.get()).
+
+Consolidate common error-handling code.
+
+Settings Page
+
+Finalize “Settings” UI and backend persistence of app-wide configurations.
+
+2. Next Actions
+
+Scaffold and test events_api.py endpoints.
+
+Implement OAuth Credentials edit UI and PUT /api/oauth/:id.
+
+Suppress DB warnings via engine disposal in fixtures or pool configuration.
+
+Expand coverage to services and models as noted in backlog.

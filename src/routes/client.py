@@ -11,23 +11,41 @@ Created Date:
 11-07-2025
 
 Last Modified Date:
-24-07-2025
+28-07-2025
 
 Version:
-v1.09
+v1.11
 
 Comments:
-- Corrected import path for GoogleCalendarService
-- Ensured GET /api/clients is available for dropdown in OAuth popup
+- Added JSON error handlers for consistent error responses
+- Fixed update_client to set underlying `google_email` column instead of new attribute
+- Added GET /clients/<id> endpoint for single-client retrieval
+- Maintains existing list, create, update, delete, and calendar routes
 """
 
 from flask import Blueprint, request, jsonify, abort
+from werkzeug.exceptions import HTTPException
 from src.extensions import db
 from src.models.client import Client
 from src.models.oauth_credential import OAuthCredential
 from src.services.google_calendar_service import GoogleCalendarService
 
 client_bp = Blueprint("client_bp", __name__, url_prefix="/api")
+
+
+# JSON Error Handlers
+@client_bp.errorhandler(400)
+def handle_bad_request(e):
+    """Return JSON for 400 Bad Request errors."""
+    description = e.description if isinstance(e, HTTPException) else str(e)
+    return jsonify(message=description), 400
+
+
+@client_bp.errorhandler(404)
+def handle_not_found(e):
+    """Return JSON for 404 Not Found errors."""
+    description = e.description if isinstance(e, HTTPException) else str(e)
+    return jsonify(message=description), 404
 
 
 def validate_client_data(data):
@@ -56,6 +74,15 @@ def get_clients():
     return jsonify([c.to_dict() for c in clients]), 200
 
 
+@client_bp.route("/clients/<int:client_id>", methods=["GET"])
+def get_client(client_id: int):
+    """Fetch a single client by ID."""
+    client = Client.query.get_or_404(
+        client_id, description=f"Client {client_id} not found."
+    )
+    return jsonify(client.to_dict()), 200
+
+
 @client_bp.route("/clients", methods=["POST"])
 def create_client():
     """Create a new client."""
@@ -70,7 +97,7 @@ def create_client():
 
 
 @client_bp.route("/clients/<int:client_id>", methods=["PUT"])
-def update_client(client_id):
+def update_client(client_id: int):
     """Update an existing client."""
     client = Client.query.get_or_404(
         client_id, description=f"Client {client_id} not found."
@@ -80,13 +107,14 @@ def update_client(client_id):
     google_email = validate_google_email(data)
     client.name = name
     client.email = email
-    client.google_account_email = google_email
+    # Correctly assign to the mapped column
+    client.google_email = google_email
     db.session.commit()
     return jsonify(client.to_dict()), 200
 
 
 @client_bp.route("/clients/<int:client_id>", methods=["DELETE"])
-def delete_client(client_id):
+def delete_client(client_id: int):
     """Delete a client."""
     client = Client.query.get_or_404(
         client_id, description=f"Client {client_id} not found."
@@ -97,7 +125,7 @@ def delete_client(client_id):
 
 
 @client_bp.route("/clients/<int:client_id>/calendars", methods=["GET"])
-def get_client_calendars(client_id):
+def get_client_calendars(client_id: int):
     """Return all Google Calendars for a given client."""
     # 1) Ensure client exists
     Client.query.get_or_404(client_id, description=f"Client {client_id} not found.")
