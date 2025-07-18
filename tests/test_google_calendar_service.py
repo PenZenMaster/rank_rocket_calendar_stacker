@@ -59,7 +59,7 @@ def test_service_build_and_refresh(mock_from_info, mock_build, fake_credential):
     mock_from_info.return_value = creds_obj
 
     # Simulate refresh behavior
-    with patch.object(creds_obj, "refresh", autospec=True) as mock_refresh:
+    with patch.object(creds_obj, "refresh") as mock_refresh:  # Remove autospec=True
         service = GoogleCalendarService(fake_credential)
         # Ensure service build was invoked correctly
         mock_build.assert_called_once_with("calendar", "v3", credentials=creds_obj)

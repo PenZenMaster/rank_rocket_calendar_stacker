@@ -24,7 +24,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from flask import session
 from src.extensions import db
-from src.models.oauth import OAuthCredential
+from src.models.oauth_credential import OAuthCredential
+
 
 def test_authorize_redirect(client, setup_db):
     oauth = OAuthCredential(
@@ -49,6 +50,7 @@ def test_authorize_redirect(client, setup_db):
         response = client.get(f"/authorize/{oauth.id}", follow_redirects=False)
         assert response.status_code == 302
         assert "http://mock.google.auth" in response.headers["Location"]
+
 
 def test_callback_exchanges_token(client, setup_db):
     oauth = OAuthCredential(

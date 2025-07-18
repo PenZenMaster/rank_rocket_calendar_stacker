@@ -25,11 +25,12 @@ import pytest
 from unittest.mock import patch, MagicMock
 from flask import session
 from src.extensions import db
-from src.models.oauth import OAuthCredential
+from src.routes.oauth import oauth_bp  # ✅ CORRECT - import from routes
+from src.models.oauth_credential import OAuthCredential
 
 
 def test_authorize_redirect(client, setup_db):
-    oauth = OAuthCredential(
+    oauth_credential = OAuthCredential(
         client_id=1,
         google_client_id="test-google-client",
         google_client_secret="test-secret",
