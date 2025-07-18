@@ -38,7 +38,7 @@ def test_authorize_redirect(client, setup_db):
         scopes='["scope1", "scope2"]',
         is_valid=False,
     )
-    db.session.add(oauth)
+    db.session.add(oauth_credential)
     db.session.commit()
 
     with patch("src.routes.oauth_flow.Flow.from_client_config") as mock_flow:
@@ -49,7 +49,9 @@ def test_authorize_redirect(client, setup_db):
         )
         mock_flow.return_value = mock_instance
 
-        response = client.get(f"/authorize/{oauth.id}", follow_redirects=False)
+        response = client.get(
+            f"/authorize/{oauth_credential.id}", follow_redirects=False
+        )
         assert response.status_code == 302
         assert "http://mock.google.auth" in response.headers["Location"]
 
