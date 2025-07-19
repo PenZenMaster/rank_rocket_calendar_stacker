@@ -14,12 +14,12 @@ Last Modified Date:
 31-07-2025
 
 Version:
-v1.20
-✅ Success alerts for Clients now appear above the modal (not behind it)
+v1.21
 
-✅ Client modal closes automatically after successful save
-
-
+Comments:
+- Stubbed out loadDashboard to prevent runtime error
+- Fixed modal not closing after client save
+- Fixed alert rendering behind the modal
 */
 
 // Global variables
@@ -29,7 +29,7 @@ let currentCalendars = [];
 
 // Initialize the application
 document.addEventListener("DOMContentLoaded", () => {
-  loadDashboard();
+  // Stubbed: loadDashboard(); // Commented out to prevent ReferenceError
   loadClients();
   loadOAuthCredentials();
 });
@@ -47,7 +47,7 @@ function showSection(sectionName, event) {
 
   switch (sectionName) {
     case "dashboard":
-      loadDashboard();
+      // loadDashboard(); // Temporarily removed until implemented
       break;
     case "clients":
       loadClients();
