@@ -1,26 +1,27 @@
 """
 Module/Script Name: src/__init__.py
-Path: E:/projects/rank_rocket_calendar_stacker/src/__init__.py
 
 Description:
-Package initializer for Rank Rocket Calendar Stacker application.
+Package initializer for the src application, exposing factory function.
 
 Author(s):
-Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
+Skippy the Code Slayer
 
 Created Date:
-17-07-2025
+10-07-2025
 
 Last Modified Date:
-17-07-2025
+19-07-2025
 
 Version:
 v1.01
 
 Comments:
-- Removed legacy top-level model imports to prevent `ModuleNotFoundError`
-- Entry-point exposes application factory only
+- Removed top-level import of `create_app` to avoid circular import
 """
 
-# Expose application factory
-from .main import create_app
+# `src` is now a namespace package. Create app via `python -m src.main`.
+# No direct imports here to avoid circular dependencies.
+
+# Optional: expose public API
+# __all__ = ['main']
