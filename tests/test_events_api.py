@@ -15,11 +15,11 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.06
+v1.07
 
 Comments:
 - Uses unique in-memory SQLite DB per test via UUID-based URI for isolation
-- Seeds a Client and OAuthCredential record in setup
+- Seeds a Client and a fully specified OAuthCredential (including required non-null fields)
 - Stubbed GoogleCalendarService via DummyService for predictable responses
 - Removes redundant blueprint registration and corrects header dates
 """
@@ -84,7 +84,7 @@ def app():
         # Reset schema
         db.drop_all()
         db.create_all()
-        # Seed Client and OAuthCredential
+        # Seed Client and fully populated OAuthCredential
         client_obj = Client(
             name="C1", email="c1@example.com", google_account_email="g1@example.com"
         )
@@ -93,6 +93,10 @@ def app():
         expires = datetime.datetime(2026, 1, 1, 0, 0, 0)
         cred = OAuthCredential(
             client_id=client_obj.id,
+            google_client_id="dummy_client",
+            google_client_secret="dummy_secret",
+            google_redirect_uri="https://dummy/callback",
+            scopes=["dummy_scope"],
             token_status="valid",
             expires_at=expires,
             is_valid=True,
