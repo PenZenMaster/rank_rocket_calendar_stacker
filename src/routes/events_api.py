@@ -1,6 +1,6 @@
-"""
-Module/Script Name: src/routes/events_api.py
+# Module/Script Name: src/routes/events_api.py
 
+"""
 Description:
 JSON REST API endpoints for Google Calendar Event CRUD operations.
 
@@ -14,13 +14,12 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.00
+v1.01
 
 Comments:
 - Implements GET, POST, GET/<id>, PUT/<id>, DELETE/<id> for events
   under /api/clients/<client_id>/calendars/<calendar_id>/events
 """
-
 from flask import Blueprint, request, jsonify, abort
 from src.models.client import Client
 from src.models.oauth_credential import OAuthCredential
