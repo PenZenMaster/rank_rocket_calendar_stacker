@@ -72,7 +72,7 @@ This command will install all the necessary libraries, including Flask, Flask-SQ
 Once all dependencies are installed, you can run the Flask application. Ensure your virtual environment is still active.
 
 ```bash
-python src/main.py
+python -m src.main
 ```
 
 Upon successful execution, you will see output similar to this in your terminal:
