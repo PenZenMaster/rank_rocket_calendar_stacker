@@ -1,6 +1,5 @@
 """
 Module/Script Name: src/models/oauth_credential.py
-Path: E:/projects/rank_rocket_calendar_stacker/src/models/oauth_credential.py
 
 Description:
 Unified SQLAlchemy model for Google OAuth credentials linked to a client, consolidating fields and behavior from `oauth.py` and `oauth_credential.py`.
@@ -12,15 +11,16 @@ Created Date:
 12-07-2025
 
 Last Modified Date:
-17-07-2025
+18-07-2025
 
 Version:
-v1.06
+v1.07
 
 Comments:
-- Added `google_redirect_uri` field from `oauth.py` to support redirect URIs
-- Normalized column types and lengths (`String(256)` for client ID/secret, `Text` for tokens and scopes)
-- Introduced `__table_args__ = {{"extend_existing": True}}` to prevent duplicate table errors during tests
+- Changed `scopes` column from Text to JSON to support list of scopes
+- Added `google_redirect_uri` field to support redirect URIs
+- Normalized column types and lengths (`String(256)` for client ID/secret, `Text` for tokens)
+- Introduced `__table_args__ = {"extend_existing": True}` to prevent duplicate table errors during tests
 - Implemented dynamic `__init__` for dict-style construction and `to_dict` for JSON serialization
 - Subclasses Flask-SQLAlchemy `db.Model` for shared metadata
 - Uses string-based relationship for deferred resolution: `relationship("Client")`
@@ -40,7 +40,7 @@ class OAuthCredential(db.Model):
     google_client_id = db.Column(db.String(256), nullable=False)
     google_client_secret = db.Column(db.String(256), nullable=False)
     google_redirect_uri = db.Column(db.String(512), nullable=False)
-    scopes = db.Column(db.Text, nullable=False)
+    scopes = db.Column(db.JSON, nullable=False)  # changed to JSON type
 
     access_token = db.Column(db.Text, nullable=True)
     refresh_token = db.Column(db.Text, nullable=True)
