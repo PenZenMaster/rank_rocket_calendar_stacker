@@ -15,13 +15,13 @@ Last Modified Date:
 29-07-2025
 
 Version:
-v1.01
+v1.02
 
 Comments:
 - Uses unique in-memory SQLite DB per test via UUID URI for isolation
 - Seeds a test client and valid OAuthCredential in setup
 - Monkeypatches GoogleCalendarService to return controlled responses
-- Asserts client exists before accessing `id` to avoid None issues
+- Removes duplicate blueprint registration
 """
 
 import pytest
@@ -79,7 +79,7 @@ def app():
     uid = uuid.uuid4().hex
     db_uri = f"sqlite:///file:{uid}?mode=memory&cache=shared&uri=true"
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": db_uri})
-    app.register_blueprint(events_bp)
+    # Blueprint already registered by create_app; no duplicate registration here
     with app.app_context():
         db.drop_all()
         db.create_all()
