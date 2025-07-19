@@ -1,6 +1,6 @@
-"""
-Module/Script Name: src/routes/oauth_flow.py
+# Module/Script Name: src/routes/oauth_flow.py
 
+"""
 Description:
 Handles OAuth 2.0 redirect and callback logic for authorization flow
 
@@ -11,19 +11,18 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-22-07-2025
+18-07-2025
 
 Version:
-v1.11
+v1.12
 
 Comments:
 - Redirect to '/' after successful OAuth callback so client list is displayed in the UI
 """
-
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "././")))
 
 from flask import Blueprint, redirect, request, url_for, session
 from google_auth_oauthlib.flow import Flow
@@ -33,7 +32,6 @@ from src.extensions import db
 import pathlib
 import json
 
-# Create blueprint
 oauth_flow_bp = Blueprint("oauth_flow_bp", __name__)
 
 
