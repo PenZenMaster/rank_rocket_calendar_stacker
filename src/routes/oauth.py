@@ -11,13 +11,14 @@ Created Date:
 13-07-2025
 
 Last Modified Date:
-19-07-2025
+29-07-2025
 
 Version:
 v1.03
 
 Comments:
-- Added default google_redirect_uri in create_oauth to satisfy non-null constraint
+- Improved validation to return 400 for missing/invalid client IDs
+- Defaulted `google_redirect_uri` to empty string to satisfy NOT NULL constraint
 - JSON error handlers for consistent error responses
 """
 
@@ -48,9 +49,11 @@ def handle_not_found(e):
 def validate_oauth_data(data):
     """Ensure required fields are present and valid."""
     client_id = data.get("client_id")
-    if not client_id:
+    if client_id is None:
         abort(400, description="'client_id' is required.")
-    Client.query.get_or_404(client_id, description=f"Client {client_id} not found.")
+    # Return 400 when client not found
+    if Client.query.get(client_id) is None:
+        abort(400, description=f"Client {client_id} not found.")
     required_fields = ["google_client_id", "google_client_secret", "scopes"]
     for field in required_fields:
         if not data.get(field):
@@ -68,8 +71,9 @@ def list_oauth():
 @oauth_bp.route("/api/oauth", methods=["POST"])
 def create_oauth():
     """Create a new OAuthCredential."""
-    data = validate_oauth_data(request.get_json() or {})
-    # Provide a default for redirect URI to satisfy non-null constraint
+    data = request.get_json() or {}
+    data = validate_oauth_data(data)
+    # Default redirect URI to satisfy NOT NULL constraint
     data.setdefault("google_redirect_uri", "")
     oauth = OAuthCredential(**data, is_valid=False)
     db.session.add(oauth)
@@ -97,6 +101,7 @@ def update_oauth(oauth_id: int):
         "is_valid",
         "token_status",
         "expires_at",
+        "google_redirect_uri",
     ]:
         if attr in data:
             setattr(oauth, attr, data[attr])
