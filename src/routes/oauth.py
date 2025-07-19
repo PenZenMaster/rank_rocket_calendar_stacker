@@ -11,14 +11,13 @@ Created Date:
 13-07-2025
 
 Last Modified Date:
-29-07-2025
+19-07-2025
 
 Version:
-v1.02
+v1.03
 
 Comments:
-- Added GET /api/oauth for listing credentials
-- Retains POST, GET by id, PUT, DELETE endpoints for full CRUD
+- Added default google_redirect_uri in create_oauth to satisfy non-null constraint
 - JSON error handlers for consistent error responses
 """
 
@@ -70,6 +69,8 @@ def list_oauth():
 def create_oauth():
     """Create a new OAuthCredential."""
     data = validate_oauth_data(request.get_json() or {})
+    # Provide a default for redirect URI to satisfy non-null constraint
+    data.setdefault("google_redirect_uri", "")
     oauth = OAuthCredential(**data, is_valid=False)
     db.session.add(oauth)
     db.session.commit()
