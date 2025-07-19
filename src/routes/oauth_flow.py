@@ -1,11 +1,11 @@
-# Module/Script Name: src/routes/oauth_flow.py
-
 """
+Module/Script Name: src/routes/oauth_flow.py
+
 Description:
-Handles OAuth 2.0 redirect and callback logic for authorization flow
+Handles OAuth 2.0 redirect and callback logic for authorization flow.
 
 Author(s):
-Skippy the Magnificent with an eensy weensy bit of help from that filthy monkey, Big G
+Skippy the Code Slayer with an eensy weensy bit of help from that filthy monkey, Big G
 
 Created Date:
 14-07-2025
@@ -14,32 +14,29 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.12
+v1.13
 
 Comments:
-- Redirect to '/' after successful OAuth callback so client list is displayed in the UI
+- Deferred import of `Flow` from `google_auth_oauthlib.flow` into view functions to avoid circular import with stdlib `calendar` module
+- Redirect to `/` after successful OAuth callback so client list is displayed in the UI
 """
-import sys
-import os
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "././")))
-
-from flask import Blueprint, redirect, request, url_for, session
-from google_auth_oauthlib.flow import Flow
+from flask import Blueprint, redirect, request, session, abort
 from src.models.oauth_credential import OAuthCredential
 from src.extensions import db
-
-import pathlib
-import json
 
 oauth_flow_bp = Blueprint("oauth_flow_bp", __name__)
 
 
 @oauth_flow_bp.route("/authorize/<int:oauth_id>")
 def authorize(oauth_id):
+    """Initiate OAuth 2.0 flow for a given OAuthCredential."""
+    # Defer import to avoid global google_auth_oauthlib.flow import
+    from google_auth_oauthlib.flow import Flow
+
     oauth_entry = db.session.get(OAuthCredential, oauth_id)
     if not oauth_entry:
-        return "OAuth credentials not found", 404
+        abort(404, description="OAuth credentials not found.")
 
     client_config = {
         "web": {
@@ -69,14 +66,18 @@ def authorize(oauth_id):
 
 @oauth_flow_bp.route("/callback")
 def callback():
+    """Handle OAuth callback, exchange code for tokens, and persist."""
+    # Defer import to avoid top-level import issues
+    from google_auth_oauthlib.flow import Flow
+
     state = session.get("state")
     oauth_id = session.get("oauth_id")
     if not oauth_id:
-        return "Missing session oauth_id", 400
+        abort(400, description="Missing OAuth session state.")
 
     oauth_entry = db.session.get(OAuthCredential, oauth_id)
     if not oauth_entry:
-        return "OAuth credentials not found", 404
+        abort(404, description="OAuth credentials not found.")
 
     client_config = {
         "web": {
@@ -101,5 +102,5 @@ def callback():
     oauth_entry.access_token = credentials.token
     db.session.commit()
 
-    # Redirect back to the client list UI
+    # Redirect back to the client list in the UI
     return redirect("/")
