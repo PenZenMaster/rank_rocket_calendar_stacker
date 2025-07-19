@@ -9,19 +9,19 @@ Author(s):
 Skippy the Code Slayer
 
 Created Date:
-28-07-2025
+18-07-2025
 
 Last Modified Date:
 18-07-2025
 
 Version:
-v1.05
+v1.06
 
 Comments:
 - Uses unique in-memory SQLite DB per test via UUID-based URI for isolation
 - Seeds a Client and OAuthCredential record in setup
 - Stubbed GoogleCalendarService via DummyService for predictable responses
-- Ensures JSON structure and status codes match API contract
+- Removes redundant blueprint registration and corrects header dates
 """
 
 import pytest
@@ -80,10 +80,11 @@ def app():
     uid = uuid.uuid4().hex
     db_uri = f"sqlite:///file:{uid}?mode=memory&cache=shared&uri=true"
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": db_uri})
-    app.register_blueprint(events_bp)
     with app.app_context():
+        # Reset schema
         db.drop_all()
         db.create_all()
+        # Seed Client and OAuthCredential
         client_obj = Client(
             name="C1", email="c1@example.com", google_account_email="g1@example.com"
         )
@@ -99,6 +100,7 @@ def app():
         db.session.add(cred)
         db.session.commit()
         yield app
+        # Teardown
         db.session.remove()
         db.drop_all()
         engine = db.get_engine(app=app)
@@ -127,7 +129,7 @@ def stub_service(monkeypatch):
     )
 
 
-def test_list_events(client, app):
+def test_list_events(client):
     client_obj = Client.query.first()
     assert client_obj is not None
     cid = client_obj.id
