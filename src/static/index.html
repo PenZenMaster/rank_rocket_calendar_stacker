@@ -278,37 +278,41 @@
 	</div>
 
 	<!-- Client Modal -->
-	<div class="modal fade" id="clientModal" tabindex="-1">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="clientModalTitle">Add Client</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body">
-					<form id="clientForm">
-						<input type="hidden" id="clientId">
-						<div class="mb-3">
-							<label for="clientName" class="form-label">Client Name *</label>
-							<input type="text" class="form-control" id="clientName" required>
-						</div>
-						<div class="mb-3">
-							<label for="clientEmail" class="form-label">Email *</label>
-							<input type="email" class="form-control" id="clientEmail" required>
-						</div>
-						<div class="mb-3">
-							<label for="googleAccountEmail" class="form-label">Google Account Email *</label>
-							<input type="email" class="form-control" id="googleAccountEmail" required>
-						</div>
-					</form>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" onclick="saveClient()">Save</button>
-				</div>
-			</div>
-		</div>
-	</div>
+<div class="modal fade" id="clientModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="clientModalTitle">Add Client</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- inline modal errors go here -->
+        <div id="clientModalAlerts"></div>
+
+        <form id="clientForm">
+          <input type="hidden" id="clientId">
+          <div class="mb-3">
+            <label for="clientName" class="form-label">Client Name *</label>
+            <input type="text" class="form-control" id="clientName" required>
+          </div>
+          <div class="mb-3">
+            <label for="clientEmail" class="form-label">Email *</label>
+            <input type="email" class="form-control" id="clientEmail" required>
+          </div>
+          <div class="mb-3">
+            <label for="googleAccountEmail" class="form-label">Google Account Email *</label>
+            <input type="email" class="form-control" id="googleAccountEmail" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveClient()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 	<!-- OAuth Credentials Modal -->
 	<div class="modal fade" id="oauthModal" tabindex="-1">
