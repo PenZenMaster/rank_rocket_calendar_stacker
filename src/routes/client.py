@@ -11,20 +11,20 @@ Created Date:
 11-07-2025
 
 Last Modified Date:
-28-07-2025
+30-07-2025
 
 Version:
-v1.11
+v1.12
 
 Comments:
-- Added JSON error handlers for consistent error responses
-- Fixed update_client to set underlying `google_email` column instead of new attribute
-- Added GET /clients/<id> endpoint for single-client retrieval
-- Maintains existing list, create, update, delete, and calendar routes
+- Added IntegrityError handling on create/update to return friendly 400 on unique constraint failures
+- Rolls back session on error to maintain clean state
+- Imports IntegrityError from sqlalchemy.exc
 """
 
 from flask import Blueprint, request, jsonify, abort
 from werkzeug.exceptions import HTTPException
+from sqlalchemy.exc import IntegrityError
 from src.extensions import db
 from src.models.client import Client
 from src.models.oauth_credential import OAuthCredential
@@ -92,7 +92,13 @@ def create_client():
     new_client = Client(name=name, email=email, google_account_email=google_email)
 
     db.session.add(new_client)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        abort(
+            400, description="A client with this Google account email already exists."
+        )
     return jsonify(new_client.to_dict()), 201
 
 
@@ -107,9 +113,14 @@ def update_client(client_id: int):
     google_email = validate_google_email(data)
     client.name = name
     client.email = email
-    # Correctly assign to the mapped column
-    client.google_email = google_email
-    db.session.commit()
+    client.google_account_email = google_email
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        abort(
+            400, description="A client with this Google account email already exists."
+        )
     return jsonify(client.to_dict()), 200
 
 
@@ -127,14 +138,10 @@ def delete_client(client_id: int):
 @client_bp.route("/clients/<int:client_id>/calendars", methods=["GET"])
 def get_client_calendars(client_id: int):
     """Return all Google Calendars for a given client."""
-    # 1) Ensure client exists
     Client.query.get_or_404(client_id, description=f"Client {client_id} not found.")
-    # 2) Fetch valid OAuth credentials
     creds = OAuthCredential.query.filter_by(client_id=client_id, is_valid=True).first()
     if not creds:
         abort(400, description="No valid OAuth credentials for this client.")
-    # 3) Instantiate GoogleCalendarService
     svc = GoogleCalendarService(creds)
-    # 4) Retrieve and return calendars
     calendars = svc.list_calendars()
     return jsonify(calendars), 200
