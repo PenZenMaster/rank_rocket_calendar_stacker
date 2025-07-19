@@ -15,13 +15,13 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.07
+v1.08
 
 Comments:
-- Uses unique in-memory SQLite DB per test via UUID-based URI for isolation
-- Seeds a Client and a fully specified OAuthCredential (including required non-null fields)
-- Stubbed GoogleCalendarService via DummyService for predictable responses
-- Removes redundant blueprint registration and corrects header dates
+- Uses a unique in-memory SQLite database per test via a UUID-based URI
+- Seeds a Client and fully populated OAuthCredential (google_client_id, google_client_secret, google_redirect_uri, scopes, token_status, expires_at, is_valid)
+- Stubbed GoogleCalendarService via DummyService for predictable API responses
+- Removed redundant blueprint registration and ensured engine disposal in teardown
 """
 
 import pytest
@@ -76,7 +76,7 @@ class DummyService:
 
 @pytest.fixture
 def app():
-    # Unique in-memory DB for events API tests
+    # Configure a unique in-memory SQLite database
     uid = uuid.uuid4().hex
     db_uri = f"sqlite:///file:{uid}?mode=memory&cache=shared&uri=true"
     app = create_app({"TESTING": True, "SQLALCHEMY_DATABASE_URI": db_uri})
@@ -84,7 +84,7 @@ def app():
         # Reset schema
         db.drop_all()
         db.create_all()
-        # Seed Client and fully populated OAuthCredential
+        # Seed Client and OAuthCredential with required fields
         client_obj = Client(
             name="C1", email="c1@example.com", google_account_email="g1@example.com"
         )
@@ -104,7 +104,7 @@ def app():
         db.session.add(cred)
         db.session.commit()
         yield app
-        # Teardown
+        # Teardown: close session and dispose engine
         db.session.remove()
         db.drop_all()
         engine = db.get_engine(app=app)
