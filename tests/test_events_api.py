@@ -15,13 +15,14 @@ Last Modified Date:
 18-07-2025
 
 Version:
-v1.08
+v1.09
 
 Comments:
 - Uses a unique in-memory SQLite database per test via a UUID-based URI
 - Seeds a Client and fully populated OAuthCredential (google_client_id, google_client_secret, google_redirect_uri, scopes, token_status, expires_at, is_valid)
-- Stubbed GoogleCalendarService via DummyService for predictable API responses
-- Removed redundant blueprint registration and ensured engine disposal in teardown
+- Stubs GoogleCalendarService via DummyService for predictable API responses
+- Does not manually register the `events_bp` blueprint (already registered in `create_app`)
+- Ensures engine disposal in teardown
 """
 
 import pytest
@@ -31,8 +32,8 @@ from src.main import create_app
 from src.extensions import db
 from src.models.client import Client
 from src.models.oauth_credential import OAuthCredential
-from src.routes.events_api import events_bp
 from src.services.google_calendar_service import GoogleCalendarService
+from src.routes.events_api import events_bp  # imported for context, not re-registered
 
 
 # Stubbed service implementation for testing
