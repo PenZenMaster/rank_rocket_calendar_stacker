@@ -1,407 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Calendar Manager</title>
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-	<style>
-		.sidebar {
-			min-height: 100vh;
-			background-color: #f8f9fa;
-			border-right: 1px solid #dee2e6;
-		}
-
-		.nav-link {
-			color: #495057;
-			border-radius: 0.375rem;
-			margin-bottom: 0.25rem;
-		}
-
-		.nav-link:hover,
-		.nav-link.active {
-			background-color: #e9ecef;
-			color: #212529;
-		}
-
-		.content-area {
-			min-height: 100vh;
-			padding: 2rem;
-		}
-
-		.card-header {
-			background-color: #f8f9fa;
-			border-bottom: 1px solid #dee2e6;
-		}
-
-		.status-badge {
-			font-size: 0.75rem;
-		}
-
-		.loading {
-			display: none;
-		}
-
-		.error-message {
-			display: none;
-		}
-
-		.success-message {
-			display: none;
-		}
-	</style>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rank Rocket Calendar Stacker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-
 <body>
-	<div class="container-fluid">
-		<div class="row">
-			<!-- Sidebar -->
-			<nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-				<div class="position-sticky pt-3">
-					<div class="text-center mb-4">
-						<h4 class="text-primary">
-							<i class="fas fa-calendar-alt"></i>
-							Calendar Manager
-						</h4>
-					</div>
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Rank Rocket</a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" href="#" onclick="showSection('dashboard', event)">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showSection('clients', event)">Clients</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showSection('oauth', event)">OAuth Settings</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showSection('events', event)">Events</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
 
-					<ul class="nav flex-column">
-						<li class="nav-item">
-							<a class="nav-link active" href="#" onclick="showSection('dashboard')">
-								<i class="fas fa-tachometer-alt me-2"></i>
-								Dashboard
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="#" onclick="showSection('clients')">
-								<i class="fas fa-users me-2"></i>
-								Clients
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="#" onclick="showSection('events')">
-								<i class="fas fa-calendar me-2"></i>
-								Events
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="#" onclick="showSection('oauth')">
-								<i class="fas fa-key me-2"></i>
-								OAuth Settings
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link" href="#" onclick="showSection('settings')">
-								<i class="fas fa-cog me-2"></i>
-								Settings
-							</a>
-						</li>
-					</ul>
-				</div>
-			</nav>
+  <div class="container mt-4">
+    <div id="globalAlerts"></div>
 
-			<!-- Main content -->
-			<main class="col-md-9 ms-sm-auto col-lg-10 content-area">
-				<!-- Global alerts -->
-				<div id="globalAlerts"></div>
+    <!-- Dashboard Section -->
+    <div id="dashboard" class="section">
+      <h2>Dashboard</h2>
+      <p>Total Clients: <span id="totalClients">0</span></p>
+    </div>
 
-				<!-- Dashboard Section -->
-				<div id="dashboard" class="section">
-					<div
-						class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-						<h1 class="h2">Dashboard</h1>
-					</div>
+    <!-- Clients Section -->
+    <div id="clients" class="section" style="display:none;">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Clients</h2>
+        <button class="btn btn-primary" onclick="showOAuthModal()">Add Client</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Google Account Email</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="clientsTableBody"></tbody>
+      </table>
+    </div>
 
-					<div class="row">
-						<div class="col-md-4">
-							<div class="card">
-								<div class="card-body">
-									<h5 class="card-title">
-										<i class="fas fa-users text-primary"></i>
-										Total Clients
-									</h5>
-									<h2 class="text-primary" id="totalClients">-</h2>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-4">
-							<div class="card">
-								<div class="card-body">
-									<h5 class="card-title">
-										<i class="fas fa-calendar text-success"></i>
-										Active Events
-									</h5>
-									<h2 class="text-success" id="activeEvents">-</h2>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-4">
-							<div class="card">
-								<div class="card-body">
-									<h5 class="card-title">
-										<i class="fas fa-key text-warning"></i>
-										OAuth Status
-									</h5>
-									<h2 class="text-warning" id="oauthStatus">-</h2>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+    <!-- OAuth Section -->
+    <div id="oauth" class="section" style="display:none;">
+      <h2>OAuth Settings</h2>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <label for="oauthClientSelect" class="form-label me-2 mb-0">Client:</label>
+        <select id="oauthClientSelect" class="form-select me-auto"></select>
+        <button id="addOAuthBtn" class="btn btn-primary" onclick="showOAuthModal()">Add OAuth Credential</button>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>ID</th><th>Client</th><th>Scopes</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="oauthTableBody"></tbody>
+      </table>
+    </div>
 
-				<!-- Clients Section -->
-				<div id="clients" class="section" style="display: none;">
-					<div
-						class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-						<h1 class="h2">Clients</h1>
-						<button class="btn btn-primary" onclick="showClientModal()">
-							<i class="fas fa-plus"></i> Add Client
-						</button>
-					</div>
+    <!-- Events Section -->
+    <div id="events" class="section" style="display:none;">
+      <h2>Events</h2>
+      <!-- Future calendar and event list UI -->
+    </div>
+  </div>
 
-					<div class="card">
-						<div class="card-header">
-							<h5 class="mb-0">Client List</h5>
-						</div>
-						<div class="card-body">
-							<div class="table-responsive">
-								<table class="table table-striped">
-									<thead>
-										<tr>
-											<th>Name</th>
-											<th>Email</th>
-											<th>Google Account</th>
-											<th>Status</th>
-											<th>Actions</th>
-										</tr>
-									</thead>
-									<tbody id="clientsTableBody">
-										<!-- Clients will be loaded here -->
-									</tbody>
-								</table>
-							</div>
-						</div>
-					</div>
-				</div>
+  <!-- Client Modal -->
+  <div class="modal fade" id="clientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="clientForm" class="modal-content" onsubmit="event.preventDefault(); saveClient();">
+        <div class="modal-header">
+          <h5 id="clientModalTitle" class="modal-title">Add Client</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="clientId">
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" id="clientName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" id="clientEmail" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Google Account Email</label>
+            <input type="email" id="googleAccountEmail" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-				<!-- Events Section -->
-				<div id="events" class="section" style="display: none;">
-					<div
-						class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-						<h1 class="h2">Events</h1>
-						<button class="btn btn-primary" onclick="showEventModal()">
-							<i class="fas fa-plus"></i> Add Event
-						</button>
-					</div>
+  <!-- OAuth Modal -->
+  <div class="modal fade" id="oauthModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="oauthForm" class="modal-content" onsubmit="event.preventDefault(); saveOAuthCredentials();">
+        <div class="modal-header">
+          <h5 id="oauthModalTitle" class="modal-title">Add OAuth Credentials</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="oauthId">
+          <div class="mb-3">
+            <label class="form-label">Client</label>
+            <select id="oauthClientSelectModal" class="form-select" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Google Client ID</label>
+            <input type="text" id="googleClientId" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Google Client Secret</label>
+            <input type="text" id="googleClientSecret" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Scopes (one per line)</label>
+            <textarea id="oauthScopes" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-					<div class="row mb-3">
-						<div class="col-md-6">
-							<select class="form-select" id="clientSelect" onchange="loadEvents()">
-								<option value="">Select a client...</option>
-							</select>
-						</div>
-						<div class="col-md-6">
-							<select class="form-select" id="calendarSelect" onchange="loadEvents()">
-								<option value="">Select a calendar...</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="card">
-						<div class="card-header">
-							<h5 class="mb-0">Events</h5>
-						</div>
-						<div class="card-body">
-							<div id="eventsContainer">
-								<p class="text-muted">Select a client and calendar to view events.</p>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- OAuth Settings Section -->
-				<div id="oauth" class="section" style="display: none;">
-					<div
-						class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-						<h1 class="h2">OAuth Settings</h1>
-						<button class="btn btn-primary" onclick="showOAuthModal()">
-							<i class="fas fa-plus"></i> Add OAuth Credentials
-						</button>
-					</div>
-
-					<div class="card">
-						<div class="card-header">
-							<h5 class="mb-0">OAuth Credentials</h5>
-						</div>
-						<div class="card-body">
-							<div class="table-responsive">
-								<table class="table table-striped">
-									<thead>
-										<tr>
-											<th>Client</th>
-											<th>Google Client ID</th>
-											<th>Token Status</th>
-											<th>Expires At</th>
-											<th>Actions</th>
-										</tr>
-									</thead>
-									<tbody id="oauthTableBody">
-										<!-- OAuth credentials will be loaded here -->
-									</tbody>
-								</table>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Settings Section -->
-				<div id="settings" class="section" style="display: none;">
-					<div
-						class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
-						<h1 class="h2">Settings</h1>
-					</div>
-
-					<div class="card">
-						<div class="card-header">
-							<h5 class="mb-0">Application Settings</h5>
-						</div>
-						<div class="card-body">
-							<p class="text-muted">Application configuration and preferences.</p>
-							<!-- Settings will be implemented here -->
-						</div>
-					</div>
-				</div>
-			</main>
-		</div>
-	</div>
-
-	<!-- Client Modal -->
-	<div class="modal fade" id="clientModal" tabindex="-1">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="clientModalTitle">Add Client</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body">
-					<form id="clientForm">
-						<input type="hidden" id="clientId">
-						<div class="mb-3">
-							<label for="clientName" class="form-label">Client Name *</label>
-							<input type="text" class="form-control" id="clientName" required>
-						</div>
-						<div class="mb-3">
-							<label for="clientEmail" class="form-label">Email *</label>
-							<input type="email" class="form-control" id="clientEmail" required>
-						</div>
-						<div class="mb-3">
-							<label for="googleAccountEmail" class="form-label">Google Account Email *</label>
-							<input type="email" class="form-control" id="googleAccountEmail" required>
-						</div>
-					</form>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" onclick="saveClient()">Save</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- OAuth Credentials Modal -->
-	<div class="modal fade" id="oauthModal" tabindex="-1">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="oauthModalTitle">Add OAuth Credentials</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body">
-					<form id="oauthForm">
-						<input type="hidden" id="oauthId">
-						<div class="mb-3">
-							<label for="oauthClientSelect" class="form-label">Client *</label>
-							<select class="form-select" id="oauthClientSelect" required>
-								<option value="">Select a client...</option>
-							</select>
-						</div>
-						<div class="mb-3">
-							<label for="googleClientId" class="form-label">Google Client ID *</label>
-							<input type="text" class="form-control" id="googleClientId" required
-								placeholder="e.g., 123456789-abcdefghijklmnop.apps.googleusercontent.com">
-							<div class="form-text">
-								Get this from your Google Cloud Console OAuth 2.0 Client IDs
-							</div>
-						</div>
-						<div class="mb-3">
-							<label for="googleClientSecret" class="form-label">Google Client Secret *</label>
-							<input type="password" class="form-control" id="googleClientSecret" required>
-							<div class="form-text">
-								This will be encrypted and stored securely
-							</div>
-						</div>
-						<div class="mb-3">
-							<label for="oauthScopes" class="form-label">Scopes</label>
-							<textarea class="form-control" id="oauthScopes" rows="3"
-								placeholder="https://www.googleapis.com/auth/calendar&#10;https://www.googleapis.com/auth/calendar.events">https://www.googleapis.com/auth/calendar
-https://www.googleapis.com/auth/calendar.events</textarea>
-							<div class="form-text">
-								One scope per line. Default scopes are pre-filled for Google Calendar access.
-							</div>
-						</div>
-						<div class="alert alert-info">
-							<i class="fas fa-info-circle"></i>
-							<strong>Note:</strong> After saving these credentials, you'll need to authorize access
-							through Google's OAuth flow to obtain access tokens.
-						</div>
-					</form>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" onclick="saveOAuthCredentials()">Save
-						Credentials</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!-- Event Modal -->
-	<div class="modal fade" id="eventModal" tabindex="-1">
-		<div class="modal-dialog modal-lg">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="eventModalTitle">Add Event</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-				</div>
-				<div class="modal-body">
-					<form id="eventForm">
-						<input type="hidden" id="eventId">
-						<div class="mb-3">
-							<label for="eventSummary" class="form-label">Summary *</label>
-							<input type="text" class="form-control" id="eventSummary" required>
-						</div>
-						<div class="mb-3">
-							<label for="eventStart" class="form-label">Start Date/Time *</label>
-							<input type="datetime-local" class="form-control" id="eventStart" required>
-						</div>
-						<div class="mb-3">
-							<label for="eventEnd" class="form-label">End Date/Time *</label>
-							<input type="datetime-local" class="form-control" id="eventEnd" required>
-						</div>
-					</form>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-primary" onclick="saveEvent()">Save Event</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="app.js"></script>
 </body>
-
 </html>
