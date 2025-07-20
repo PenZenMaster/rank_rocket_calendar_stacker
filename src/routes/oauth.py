@@ -14,12 +14,12 @@ Last Modified Date:
 29-07-2025
 
 Version:
-v1.03
+v1.04
 
 Comments:
-- Improved validation to return 400 for missing/invalid client IDs
-- Defaulted `google_redirect_uri` to empty string to satisfy NOT NULL constraint
-- JSON error handlers for consistent error responses
+- Updated default for google_redirect_uri in /api/oauth POST route to use request.url_root + "/callback"
+- This enables correct construction of auth_url and allows the frontend to redirect for Google's OAuth flow
+- Primes the OAuth pipeline to transition from DB insert to live token acquisition
 """
 
 from flask import Blueprint, request, jsonify, abort
@@ -74,7 +74,7 @@ def create_oauth():
     data = request.get_json() or {}
     data = validate_oauth_data(data)
     # Default redirect URI to satisfy NOT NULL constraint
-    data.setdefault("google_redirect_uri", "")
+    data.setdefault("google_redirect_uri", request.url_root.strip("/") + "/callback")
     oauth = OAuthCredential(**data, is_valid=False)
     db.session.add(oauth)
     db.session.commit()

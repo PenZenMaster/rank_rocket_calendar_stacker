@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.44
+v1.45
 
 Comments:
-- Fixed scope validation to correctly handle multiple lines
+- Redirects browser to Google's OAuth flow instead of opening a new tab
 */
 
 let currentClients = [];
@@ -151,7 +151,7 @@ function saveOAuthCredentials() {
       bootstrap.Modal.getInstance(document.getElementById("oauthModal")).hide();
       showAlert("OAuth credentials saved successfully.");
       if (response.auth_url) {
-        window.open(response.auth_url, "_blank");
+        window.location.href = response.auth_url;
       }
     })
     .catch((err) => {
