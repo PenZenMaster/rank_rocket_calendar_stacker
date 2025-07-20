@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.30
+v1.29
 
 Comments:
-- Update the comparison to match types:
+- Added showOAuthModal() to support Add OAuth Credentials button.
 */
 
 let currentClients = [];
@@ -25,7 +25,7 @@ let currentOAuthCredentials = [];
 
 function showAlert(message, type = "success") {
   const alertPlaceholder = document.getElementById("alertPlaceholder");
-  if (!alertPlaceholder) return; // Prevent crash if placeholder is missing
+  if (!alertPlaceholder) return;
   alertPlaceholder.innerHTML = `
     <div class="alert alert-${type} alert-dismissible" role="alert">
       ${message}
@@ -71,7 +71,7 @@ function loadClients() {
         tbody.innerHTML = "<tr><td colspan='4'>No clients found.</td></tr>";
       } else {
         for (const client of clients) {
-          console.log("Client Loaded:", client); // Debugging line
+          console.log("Client Loaded:", client);
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${client.name}</td>
@@ -90,16 +90,7 @@ function loadClients() {
       showAlert("Failed to load clients", "danger");
     });
 }
-// Add this function to your app.js file
-function showClientModal() {
-  // Clear the form for adding a new client
-  document.getElementById("clientId").value = "";
-  document.getElementById("clientName").value = "";
-  document.getElementById("clientEmail").value = "";
-  document.getElementById("googleAccountEmail").value = "";
-  document.getElementById("clientModalTitle").textContent = "Add Client";
-  new bootstrap.Modal(document.getElementById("clientModal")).show();
-}
+
 function editClient(clientId) {
   const client = currentClients.find((c) => c.id === Number(clientId));
   if (!client) return;
@@ -110,6 +101,24 @@ function editClient(clientId) {
     client.google_account_email;
   document.getElementById("clientModalTitle").textContent = "Edit Client";
   new bootstrap.Modal(document.getElementById("clientModal")).show();
+}
+
+function showClientModal() {
+  document.getElementById("clientId").value = "";
+  document.getElementById("clientName").value = "";
+  document.getElementById("clientEmail").value = "";
+  document.getElementById("googleAccountEmail").value = "";
+  document.getElementById("clientModalTitle").textContent = "Add Client";
+  new bootstrap.Modal(document.getElementById("clientModal")).show();
+}
+
+function showOAuthModal() {
+  document.getElementById("oauthId").value = "";
+  document.getElementById("googleClientId").value = "";
+  document.getElementById("googleClientSecret").value = "";
+  document.getElementById("oauthModalTitle").textContent =
+    "Add OAuth Credentials";
+  new bootstrap.Modal(document.getElementById("oauthModal")).show();
 }
 
 function saveClient() {
