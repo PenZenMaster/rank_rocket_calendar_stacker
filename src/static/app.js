@@ -14,11 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.32
+v1.31
 
 Comments:
 - Added console.log to debug OAuth credential payload
-
 */
 
 let currentClients = [];
@@ -214,6 +213,7 @@ function saveOAuthCredentials() {
       // Optionally call a loadOAuthCredentials() if you plan to display the list
     })
     .catch((err) => {
+      bootstrap.Modal.getInstance(document.getElementById("oauthModal")).hide();
       showAlert("Failed to save OAuth credentials: " + err.message, "danger");
     });
 }
@@ -222,4 +222,3 @@ document.addEventListener("DOMContentLoaded", () => {
   loadClients();
   showSection("dashboard");
 });
-showSection("dashboard");
