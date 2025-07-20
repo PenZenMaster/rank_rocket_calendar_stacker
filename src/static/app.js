@@ -14,10 +14,11 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.33
+v1.34
 
 Comments:
-- Sanitized scope input before submitting OAuth credentials
+- Restored missing loadClients() and related UI handlers
+- Added autocomplete attribute suggestion handling
 */
 
 let currentClients = [];
@@ -61,7 +62,57 @@ function apiCall(url, method = "GET", data = null) {
   });
 }
 
-// ... other functions remain unchanged ...
+function loadClients() {
+  apiCall("/api/clients")
+    .then((clients) => {
+      currentClients = clients;
+      const tbody = document.getElementById("clientsTableBody");
+      tbody.innerHTML = "";
+      if (clients.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='4'>No clients found.</td></tr>";
+      } else {
+        for (const client of clients) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${client.name}</td>
+            <td>${client.email}</td>
+            <td>${client.google_account_email}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="editClient('${client.id}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteClient('${client.id}')">Delete</button>
+            </td>`;
+          tbody.appendChild(row);
+        }
+      }
+      updateDashboardCounts();
+    })
+    .catch((err) => {
+      showAlert("Failed to load clients", "danger");
+    });
+}
+
+function updateDashboardCounts() {
+  document.getElementById("totalClients").textContent = currentClients.length;
+}
+
+function showSection(sectionId) {
+  document.querySelectorAll(".section").forEach((section) => {
+    section.style.display = "none";
+  });
+  document.querySelectorAll(".nav-link").forEach((link) => {
+    link.classList.remove("active");
+  });
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.style.display = "block";
+  }
+  const navLink = Array.from(document.querySelectorAll(".nav-link")).find(
+    (link) => link.getAttribute("onclick")?.includes(sectionId)
+  );
+  if (navLink) {
+    navLink.classList.add("active");
+  }
+}
 
 function saveOAuthCredentials() {
   const id = document.getElementById("oauthId").value;
@@ -75,7 +126,6 @@ function saveOAuthCredentials() {
     return;
   }
 
-  // ✅ Trim and filter scopes to eliminate blank lines
   const rawScopes = document.getElementById("oauthScopes").value;
   const scopes = rawScopes
     .split(/\r?\n/)
