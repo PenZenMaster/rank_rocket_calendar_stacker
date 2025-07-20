@@ -92,7 +92,7 @@ function loadClients() {
 }
 
 function editClient(clientId) {
-  const client = currentClients.find((c) => c.id === clientId);
+  const client = currentClients.find((c) => c.id === Number(clientId));
   if (!client) return;
   document.getElementById("clientId").value = client.id;
   document.getElementById("clientName").value = client.name;
