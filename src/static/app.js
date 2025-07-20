@@ -14,11 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.22
+v1.23
 
 Comments:
-- Added missing showSection() function to restore section navigation.
-- Fixed sidebar nav visibility toggling to unblock UI routing.
+- Added client count update logic to reflect total clients on the dashboard.
 */
 
 let currentClients = [];
@@ -64,24 +63,29 @@ function loadClients() {
       tbody.innerHTML = "";
       if (clients.length === 0) {
         tbody.innerHTML = "<tr><td colspan='4'>No clients found.</td></tr>";
-        return;
+      } else {
+        for (const client of clients) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${client.name}</td>
+            <td>${client.email}</td>
+            <td>${client.google_email}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="editClient(${client.id})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteClient(${client.id})">Delete</button>
+            </td>`;
+          tbody.appendChild(row);
+        }
       }
-      for (const client of clients) {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${client.name}</td>
-          <td>${client.email}</td>
-          <td>${client.google_email}</td>
-          <td>
-            <button class="btn btn-sm btn-primary" onclick="editClient(${client.id})">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteClient(${client.id})">Delete</button>
-          </td>`;
-        tbody.appendChild(row);
-      }
+      updateDashboardCounts();
     })
     .catch((err) => {
       showAlert("Failed to load clients", "danger");
     });
+}
+
+function updateDashboardCounts() {
+  document.getElementById("totalClients").textContent = currentClients.length;
 }
 
 function showSection(sectionId) {
