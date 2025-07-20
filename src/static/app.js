@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.29
+v1.30
 
 Comments:
-- Update the editClient() function to coerce the incoming clientId to a number:
+- Update the comparison to match types:
 */
 
 let currentClients = [];
