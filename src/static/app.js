@@ -14,11 +14,11 @@ Last Modified Date:
 31-07-2025
 
 Version:
-v1.22
+v1.24
 
 Comments:
-- Reintroduced missing loadClients function to restore dashboard functionality
-- loadClients fetches /api/clients and populates clientTableBody
+- Implemented loadOAuthCredentials to fetch and display OAuth data
+- Populates #oauthTableBody with client name, client ID, token status
 */
 
 // Global variables
@@ -124,5 +124,29 @@ function loadClients() {
     })
     .catch((err) => {
       showAlert("Failed to load clients", "danger");
+    });
+}
+
+function loadOAuthCredentials() {
+  apiCall("/api/oauth")
+    .then((creds) => {
+      const tbody = document.getElementById("oauthTableBody");
+      tbody.innerHTML = "";
+      if (creds.length === 0) {
+        tbody.innerHTML =
+          "<tr><td colspan='3'>No OAuth credentials found.</td></tr>";
+        return;
+      }
+      for (const cred of creds) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${cred.client?.name || "Unknown Client"}</td>
+          <td>${cred.client_id}</td>
+          <td>${cred.token_valid ? "✅ Valid" : "❌ Invalid"}</td>`;
+        tbody.appendChild(row);
+      }
+    })
+    .catch((err) => {
+      showAlert("Failed to load OAuth credentials", "danger", "oauthAlerts");
     });
 }
