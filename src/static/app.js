@@ -90,7 +90,16 @@ function loadClients() {
       showAlert("Failed to load clients", "danger");
     });
 }
-
+// Add this function to your app.js file
+function showClientModal() {
+  // Clear the form for adding a new client
+  document.getElementById("clientId").value = "";
+  document.getElementById("clientName").value = "";
+  document.getElementById("clientEmail").value = "";
+  document.getElementById("googleAccountEmail").value = "";
+  document.getElementById("clientModalTitle").textContent = "Add Client";
+  new bootstrap.Modal(document.getElementById("clientModal")).show();
+}
 function editClient(clientId) {
   const client = currentClients.find((c) => c.id === Number(clientId));
   if (!client) return;
