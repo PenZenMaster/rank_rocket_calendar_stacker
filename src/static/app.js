@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.39
+v1.40
 
 Comments:
-- Fixed type mismatch in editClient() by coercing IDs to string for comparison
+- Implemented deleteClient() to complete client CRUD
 */
 
 let currentClients = [];
@@ -207,6 +207,19 @@ function editClient(id) {
   bootstrap.Modal.getOrCreateInstance(
     document.getElementById("clientModal")
   ).show();
+}
+
+function deleteClient(id) {
+  if (!confirm("Are you sure you want to delete this client?")) return;
+
+  apiCall(`/api/clients/${id}`, "DELETE")
+    .then(() => {
+      showAlert("Client deleted successfully.");
+      loadClients();
+    })
+    .catch((err) => {
+      showAlert("Failed to delete client: " + err.message, "danger");
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
