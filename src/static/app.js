@@ -1,4 +1,4 @@
-/*
+/**
 Module/Script Name: static/app.js
 
 Description:
@@ -11,15 +11,14 @@ Created Date:
 07-19-2025
 
 Last Modified Date:
-07-31-2025
+07-20-2025
 
 Version:
-v1.21
+v1.22
 
 Comments:
-- Refactored `loadClients()` with correct table ID binding and error alerting.
-- Standardized fetch error handling and ensured JSON response parsing.
-- Header block restored per project GPT mandates.
+- Added missing showSection() function to restore section navigation.
+- Fixed sidebar nav visibility toggling to unblock UI routing.
 */
 
 let currentClients = [];
@@ -61,7 +60,7 @@ function loadClients() {
   apiCall("/api/clients")
     .then((clients) => {
       currentClients = clients;
-      const tbody = document.getElementById("clientsTableBody"); // FIXED ID
+      const tbody = document.getElementById("clientsTableBody");
       tbody.innerHTML = "";
       if (clients.length === 0) {
         tbody.innerHTML = "<tr><td colspan='4'>No clients found.</td></tr>";
@@ -85,9 +84,34 @@ function loadClients() {
     });
 }
 
-// Remaining functions untouched
+function showSection(sectionId) {
+  // Hide all sections
+  document.querySelectorAll(".section").forEach((section) => {
+    section.style.display = "none";
+  });
+
+  // Remove 'active' class from all nav links
+  document.querySelectorAll(".nav-link").forEach((link) => {
+    link.classList.remove("active");
+  });
+
+  // Show the selected section
+  const section = document.getElementById(sectionId);
+  if (section) {
+    section.style.display = "block";
+  }
+
+  // Add 'active' class to the clicked link
+  const navLink = Array.from(document.querySelectorAll(".nav-link")).find(
+    (link) => link.getAttribute("onclick")?.includes(sectionId)
+  );
+  if (navLink) {
+    navLink.classList.add("active");
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   loadClients();
+  showSection("dashboard");
   // Additional init if needed
 });
