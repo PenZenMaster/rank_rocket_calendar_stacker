@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.28
+v1.29
 
 Comments:
-- Added console log in loadClients() to debug undefined client.id issue with Edit button.
+- Update the editClient() function to coerce the incoming clientId to a number:
 */
 
 let currentClients = [];
