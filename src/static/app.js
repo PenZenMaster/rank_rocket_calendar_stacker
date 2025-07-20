@@ -1,4 +1,4 @@
-/**
+/*
 Module/Script Name: static/app.js
 
 Description:
@@ -14,11 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.34
+v1.35
 
 Comments:
-- Restored missing loadClients() and related UI handlers
-- Added autocomplete attribute suggestion handling
+- Implemented showClientModal() to enable Add Client modal behavior
 */
 
 let currentClients = [];
@@ -151,6 +150,16 @@ function saveOAuthCredentials() {
       bootstrap.Modal.getInstance(document.getElementById("oauthModal")).hide();
       showAlert("Failed to save OAuth credentials: " + err.message, "danger");
     });
+}
+
+function showClientModal() {
+  document.getElementById("clientId").value = "";
+  document.getElementById("clientName").value = "";
+  document.getElementById("clientEmail").value = "";
+  document.getElementById("clientGoogleEmail").value = "";
+  bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("clientModal")
+  ).show();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
