@@ -14,10 +14,11 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.29
+v1.30
 
 Comments:
-- Added showOAuthModal() to support Add OAuth Credentials button.
+- Added saveOAuthCredentials() to handle OAuth credential submission.
+
 */
 
 let currentClients = [];
@@ -46,18 +47,10 @@ function apiCall(url, method = "GET", data = null) {
   return fetch(url, options).then(async (response) => {
     const contentType = response.headers.get("content-type") || "";
     if (!response.ok) {
-      const errorText = contentType.includes("application/json")
-        ? await response.json()
-        : await response.text();
-      throw new Error(
-        typeof errorText === "string"
-          ? errorText
-          : errorText.message || JSON.stringify(errorText)
-      );
+      const errorText = contentType.includes("application/json") ? await response.json() : await response.text();
+      throw new Error(typeof errorText === 'string' ? errorText : (errorText.message || JSON.stringify(errorText)));
     }
-    return contentType.includes("application/json")
-      ? response.json()
-      : response.text();
+    return contentType.includes("application/json") ? response.json() : response.text();
   });
 }
 
@@ -92,13 +85,12 @@ function loadClients() {
 }
 
 function editClient(clientId) {
-  const client = currentClients.find((c) => c.id === Number(clientId));
+  const client = currentClients.find(c => c.id === Number(clientId));
   if (!client) return;
   document.getElementById("clientId").value = client.id;
   document.getElementById("clientName").value = client.name;
   document.getElementById("clientEmail").value = client.email;
-  document.getElementById("googleAccountEmail").value =
-    client.google_account_email;
+  document.getElementById("googleAccountEmail").value = client.google_account_email;
   document.getElementById("clientModalTitle").textContent = "Edit Client";
   new bootstrap.Modal(document.getElementById("clientModal")).show();
 }
@@ -116,13 +108,11 @@ function showOAuthModal() {
   document.getElementById("oauthId").value = "";
   document.getElementById("googleClientId").value = "";
   document.getElementById("googleClientSecret").value = "";
-  document.getElementById("oauthModalTitle").textContent =
-    "Add OAuth Credentials";
+  document.getElementById("oauthModalTitle").textContent = "Add OAuth Credentials";
 
-  // Fixed: Use correct ID "oauthClientSelect" instead of "clientSelect"
   const clientSelect = document.getElementById("oauthClientSelect");
   clientSelect.innerHTML = "<option value=''>-- Select Client --</option>";
-  currentClients.forEach((client) => {
+  currentClients.forEach(client => {
     const option = document.createElement("option");
     option.value = client.id;
     option.textContent = client.name;
@@ -135,8 +125,7 @@ function saveClient() {
   const id = document.getElementById("clientId").value;
   const name = document.getElementById("clientName").value;
   const email = document.getElementById("clientEmail").value;
-  const google_account_email =
-    document.getElementById("googleAccountEmail").value;
+  const google_account_email = document.getElementById("googleAccountEmail").value;
 
   const data = { name, email, google_account_email };
   const url = id ? `/api/clients/${id}` : "/api/clients";
@@ -144,13 +133,11 @@ function saveClient() {
 
   apiCall(url, method, data)
     .then(() => {
-      bootstrap.Modal.getInstance(
-        document.getElementById("clientModal")
-      ).hide();
+      bootstrap.Modal.getInstance(document.getElementById("clientModal")).hide();
       showAlert("Client saved successfully.");
       loadClients();
     })
-    .catch((err) => {
+    .catch(err => {
       showAlert("Failed to save client: " + err.message, "danger");
     });
 }
@@ -162,7 +149,7 @@ function deleteClient(clientId) {
       showAlert("Client deleted successfully.");
       loadClients();
     })
-    .catch((err) => {
+    .catch(err => {
       showAlert("Failed to delete client: " + err.message, "danger");
     });
 }
@@ -172,25 +159,51 @@ function updateDashboardCounts() {
 }
 
 function showSection(sectionId) {
-  document.querySelectorAll(".section").forEach((section) => {
+  document.querySelectorAll(".section").forEach(section => {
     section.style.display = "none";
   });
-  document.querySelectorAll(".nav-link").forEach((link) => {
+  document.querySelectorAll(".nav-link").forEach(link => {
     link.classList.remove("active");
   });
   const section = document.getElementById(sectionId);
   if (section) {
     section.style.display = "block";
   }
-  const navLink = Array.from(document.querySelectorAll(".nav-link")).find(
-    (link) => link.getAttribute("onclick")?.includes(sectionId)
-  );
+  const navLink = Array.from(document.querySelectorAll('.nav-link')).find(link => link.getAttribute('onclick')?.includes(sectionId));
   if (navLink) {
     navLink.classList.add("active");
   }
 }
 
+function saveOAuthCredentials() {
+  const id = document.getElementById("oauthId").value;
+  const client_id = document.getElementById("oauthClientSelect").value;
+  const google_client_id = document.getElementById("googleClientId").value;
+  const google_client_secret = document.getElementById("googleClientSecret").value;
+
+  if (!client_id || !google_client_id || !google_client_secret) {
+    showAlert("All OAuth fields are required.", "danger");
+    return;
+  }
+
+  const data = { client_id, google_client_id, google_client_secret };
+  const url = id ? `/api/oauth/${id}` : "/api/oauth";
+  const method = id ? "PUT" : "POST";
+
+  apiCall(url, method, data)
+    .then(() => {
+      bootstrap.Modal.getInstance(document.getElementById("oauthModal")).hide();
+      showAlert("OAuth credentials saved successfully.");
+      // Optionally call a loadOAuthCredentials() if you plan to display the list
+    })
+    .catch(err => {
+      showAlert("Failed to save OAuth credentials: " + err.message, "danger");
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadClients();
+  showSection("dashboard");
+});
   showSection("dashboard");
 });
