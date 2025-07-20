@@ -119,7 +119,8 @@ function showOAuthModal() {
   document.getElementById("oauthModalTitle").textContent =
     "Add OAuth Credentials";
 
-  const clientSelect = document.getElementById("clientSelect");
+  // Fixed: Use correct ID "oauthClientSelect" instead of "clientSelect"
+  const clientSelect = document.getElementById("oauthClientSelect");
   clientSelect.innerHTML = "<option value=''>-- Select Client --</option>";
   currentClients.forEach((client) => {
     const option = document.createElement("option");
