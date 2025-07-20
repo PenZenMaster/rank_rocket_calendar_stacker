@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.27
+v1.28
 
 Comments:
-- Fixed Edit button issue by aligning property to 'google_account_email' throughout client row rendering.
+- Added console log in loadClients() to debug undefined client.id issue with Edit button.
 */
 
 let currentClients = [];
@@ -71,6 +71,7 @@ function loadClients() {
         tbody.innerHTML = "<tr><td colspan='4'>No clients found.</td></tr>";
       } else {
         for (const client of clients) {
+          console.log("Client Loaded:", client); // Debugging line
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${client.name}</td>
@@ -88,15 +89,6 @@ function loadClients() {
     .catch((err) => {
       showAlert("Failed to load clients", "danger");
     });
-}
-
-function showClientModal() {
-  document.getElementById("clientId").value = "";
-  document.getElementById("clientName").value = "";
-  document.getElementById("clientEmail").value = "";
-  document.getElementById("googleAccountEmail").value = "";
-  document.getElementById("clientModalTitle").textContent = "Add Client";
-  new bootstrap.Modal(document.getElementById("clientModal")).show();
 }
 
 function editClient(clientId) {
@@ -152,23 +144,16 @@ function updateDashboardCounts() {
 }
 
 function showSection(sectionId) {
-  // Hide all sections
   document.querySelectorAll(".section").forEach((section) => {
     section.style.display = "none";
   });
-
-  // Remove 'active' class from all nav links
   document.querySelectorAll(".nav-link").forEach((link) => {
     link.classList.remove("active");
   });
-
-  // Show the selected section
   const section = document.getElementById(sectionId);
   if (section) {
     section.style.display = "block";
   }
-
-  // Add 'active' class to the clicked link
   const navLink = Array.from(document.querySelectorAll(".nav-link")).find(
     (link) => link.getAttribute("onclick")?.includes(sectionId)
   );
@@ -180,5 +165,4 @@ function showSection(sectionId) {
 document.addEventListener("DOMContentLoaded", () => {
   loadClients();
   showSection("dashboard");
-  // Additional init if needed
 });
