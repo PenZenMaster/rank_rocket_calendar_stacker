@@ -118,6 +118,15 @@ function showOAuthModal() {
   document.getElementById("googleClientSecret").value = "";
   document.getElementById("oauthModalTitle").textContent =
     "Add OAuth Credentials";
+
+  const clientSelect = document.getElementById("clientSelect");
+  clientSelect.innerHTML = "<option value=''>-- Select Client --</option>";
+  currentClients.forEach((client) => {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.name;
+    clientSelect.appendChild(option);
+  });
   new bootstrap.Modal(document.getElementById("oauthModal")).show();
 }
 
