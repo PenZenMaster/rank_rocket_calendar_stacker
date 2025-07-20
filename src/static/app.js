@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.31
+v1.32
 
 Comments:
-- Added console.log to debug OAuth credential payload
+- Added logic to handle 'auth_url' from backend after saving OAuth credentials.
 */
 
 let currentClients = [];
@@ -142,7 +142,7 @@ function saveClient() {
   const method = id ? "PUT" : "POST";
 
   apiCall(url, method, data)
-    .then(() => {
+    .then((response) => {
       bootstrap.Modal.getInstance(
         document.getElementById("clientModal")
       ).hide();
@@ -211,6 +211,9 @@ function saveOAuthCredentials() {
     .then(() => {
       bootstrap.Modal.getInstance(document.getElementById("oauthModal")).hide();
       showAlert("OAuth credentials saved successfully.");
+      if (response.auth_url) {
+        window.open(response.auth_url, "_blank");
+      }
       // Optionally call a loadOAuthCredentials() if you plan to display the list
     })
     .catch((err) => {
