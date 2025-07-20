@@ -14,11 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.31
+v1.32
 
 Comments:
-- Added saveOAuthCredentials() to handle OAuth credential submission.
-- removed extra brackets from eof
+- Added console.log to debug OAuth credential payload
 
 */
 
@@ -204,6 +203,7 @@ function saveOAuthCredentials() {
   }
 
   const data = { client_id, google_client_id, google_client_secret };
+  console.log("OAuth Save Payload:", data);
   const url = id ? `/api/oauth/${id}` : "/api/oauth";
   const method = id ? "PUT" : "POST";
 
