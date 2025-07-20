@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.35
+v1.37
 
 Comments:
-- Implemented showClientModal() to enable Add Client modal behavior
+- Added saveClient() to enable form submission from client modal
 */
 
 let currentClients = [];
@@ -156,10 +156,39 @@ function showClientModal() {
   document.getElementById("clientId").value = "";
   document.getElementById("clientName").value = "";
   document.getElementById("clientEmail").value = "";
-  document.getElementById("clientGoogleEmail").value = "";
+  document.getElementById("googleAccountEmail").value = "";
   bootstrap.Modal.getOrCreateInstance(
     document.getElementById("clientModal")
   ).show();
+}
+
+function saveClient() {
+  const id = document.getElementById("clientId").value;
+  const name = document.getElementById("clientName").value;
+  const email = document.getElementById("clientEmail").value;
+  const google_account_email =
+    document.getElementById("googleAccountEmail").value;
+
+  if (!name || !email || !google_account_email) {
+    showAlert("All client fields are required.", "danger");
+    return;
+  }
+
+  const data = { name, email, google_account_email };
+  const url = id ? `/api/clients/${id}` : "/api/clients";
+  const method = id ? "PUT" : "POST";
+
+  apiCall(url, method, data)
+    .then(() => {
+      bootstrap.Modal.getInstance(
+        document.getElementById("clientModal")
+      ).hide();
+      showAlert("Client saved successfully.");
+      loadClients();
+    })
+    .catch((err) => {
+      showAlert("Failed to save client: " + err.message, "danger");
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
