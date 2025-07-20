@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.37
+v1.39
 
 Comments:
-- Added saveClient() to enable form submission from client modal
+- Fixed type mismatch in editClient() by coercing IDs to string for comparison
 */
 
 let currentClients = [];
@@ -189,6 +189,24 @@ function saveClient() {
     .catch((err) => {
       showAlert("Failed to save client: " + err.message, "danger");
     });
+}
+
+function editClient(id) {
+  const client = currentClients.find((c) => String(c.id) === String(id));
+  if (!client) {
+    showAlert("Client not found", "danger");
+    return;
+  }
+
+  document.getElementById("clientId").value = client.id;
+  document.getElementById("clientName").value = client.name;
+  document.getElementById("clientEmail").value = client.email;
+  document.getElementById("googleAccountEmail").value =
+    client.google_account_email;
+
+  bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("clientModal")
+  ).show();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
