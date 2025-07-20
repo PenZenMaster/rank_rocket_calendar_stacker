@@ -14,10 +14,11 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.24
+v1.25
 
 Comments:
-- Wired up Add, Edit, and Delete client buttons with modal support and backend integration.
+- Fixed error in showAlert() when alertPlaceholder doesn't exist.
+- Added JSON fallback error handling to client save.
 */
 
 let currentClients = [];
@@ -25,6 +26,7 @@ let currentOAuthCredentials = [];
 
 function showAlert(message, type = "success") {
   const alertPlaceholder = document.getElementById("alertPlaceholder");
+  if (!alertPlaceholder) return; // Prevent crash if placeholder is missing
   alertPlaceholder.innerHTML = `
     <div class="alert alert-${type} alert-dismissible" role="alert">
       ${message}
@@ -43,15 +45,20 @@ function apiCall(url, method = "GET", data = null) {
   if (data) options.body = JSON.stringify(data);
 
   return fetch(url, options).then(async (response) => {
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "API call failed");
-    }
     const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      return response.json();
+    if (!response.ok) {
+      const errorText = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
+      throw new Error(
+        typeof errorText === "string"
+          ? errorText
+          : errorText.message || JSON.stringify(errorText)
+      );
     }
-    return response.text();
+    return contentType.includes("application/json")
+      ? response.json()
+      : response.text();
   });
 }
 
