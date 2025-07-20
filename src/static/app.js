@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.40
+v1.44
 
 Comments:
-- Implemented deleteClient() to complete client CRUD
+- Fixed scope validation to correctly handle multiple lines
 */
 
 let currentClients = [];
@@ -120,17 +120,25 @@ function saveOAuthCredentials() {
   const google_client_secret =
     document.getElementById("googleClientSecret").value;
 
-  if (!client_id || !google_client_id || !google_client_secret) {
-    showAlert("All OAuth fields are required.", "danger");
-    return;
-  }
-
   const rawScopes = document.getElementById("oauthScopes").value;
-  const scopes = rawScopes
+  const scopesArray = rawScopes
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .join("\n");
+    .filter((line) => line.length > 0);
+  const scopes = scopesArray.join("\n");
+
+  if (
+    !client_id ||
+    !google_client_id ||
+    !google_client_secret ||
+    scopesArray.length === 0
+  ) {
+    showAlert(
+      "All OAuth fields are required, including at least one valid scope.",
+      "danger"
+    );
+    return;
+  }
 
   const data = { client_id, google_client_id, google_client_secret, scopes };
   console.log("OAuth Save Payload:", data);
@@ -159,6 +167,25 @@ function showClientModal() {
   document.getElementById("googleAccountEmail").value = "";
   bootstrap.Modal.getOrCreateInstance(
     document.getElementById("clientModal")
+  ).show();
+}
+
+function showOAuthModal() {
+  document.getElementById("oauthId").value = "";
+  document.getElementById("oauthClientSelect").innerHTML =
+    "<option value=''>Select Client</option>";
+  for (const client of currentClients) {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.name;
+    document.getElementById("oauthClientSelect").appendChild(option);
+  }
+  document.getElementById("googleClientId").value = "";
+  document.getElementById("googleClientSecret").value = "";
+  document.getElementById("oauthScopes").value =
+    "https://www.googleapis.com/auth/calendar\nhttps://www.googleapis.com/auth/calendar.events";
+  bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("oauthModal")
   ).show();
 }
 
