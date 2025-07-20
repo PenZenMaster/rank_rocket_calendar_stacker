@@ -14,11 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.25
+v1.26
 
 Comments:
-- Fixed error in showAlert() when alertPlaceholder doesn't exist.
-- Added JSON fallback error handling to client save.
+- Fixed API client payload to use correct key 'google_account_email'.
 */
 
 let currentClients = [];
@@ -115,9 +114,10 @@ function saveClient() {
   const id = document.getElementById("clientId").value;
   const name = document.getElementById("clientName").value;
   const email = document.getElementById("clientEmail").value;
-  const google_email = document.getElementById("googleAccountEmail").value;
+  const google_account_email =
+    document.getElementById("googleAccountEmail").value;
 
-  const data = { name, email, google_email };
+  const data = { name, email, google_account_email };
   const url = id ? `/api/clients/${id}` : "/api/clients";
   const method = id ? "PUT" : "POST";
 
