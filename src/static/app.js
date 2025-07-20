@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.23
+v1.24
 
 Comments:
-- Added client count update logic to reflect total clients on the dashboard.
+- Wired up Add, Edit, and Delete client buttons with modal support and backend integration.
 */
 
 let currentClients = [];
@@ -71,8 +71,8 @@ function loadClients() {
             <td>${client.email}</td>
             <td>${client.google_email}</td>
             <td>
-              <button class="btn btn-sm btn-primary" onclick="editClient(${client.id})">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteClient(${client.id})">Delete</button>
+              <button class="btn btn-sm btn-primary" onclick="editClient('${client.id}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteClient('${client.id}')">Delete</button>
             </td>`;
           tbody.appendChild(row);
         }
@@ -81,6 +81,61 @@ function loadClients() {
     })
     .catch((err) => {
       showAlert("Failed to load clients", "danger");
+    });
+}
+
+function showClientModal() {
+  document.getElementById("clientId").value = "";
+  document.getElementById("clientName").value = "";
+  document.getElementById("clientEmail").value = "";
+  document.getElementById("googleAccountEmail").value = "";
+  document.getElementById("clientModalTitle").textContent = "Add Client";
+  new bootstrap.Modal(document.getElementById("clientModal")).show();
+}
+
+function editClient(clientId) {
+  const client = currentClients.find((c) => c.id === clientId);
+  if (!client) return;
+  document.getElementById("clientId").value = client.id;
+  document.getElementById("clientName").value = client.name;
+  document.getElementById("clientEmail").value = client.email;
+  document.getElementById("googleAccountEmail").value = client.google_email;
+  document.getElementById("clientModalTitle").textContent = "Edit Client";
+  new bootstrap.Modal(document.getElementById("clientModal")).show();
+}
+
+function saveClient() {
+  const id = document.getElementById("clientId").value;
+  const name = document.getElementById("clientName").value;
+  const email = document.getElementById("clientEmail").value;
+  const google_email = document.getElementById("googleAccountEmail").value;
+
+  const data = { name, email, google_email };
+  const url = id ? `/api/clients/${id}` : "/api/clients";
+  const method = id ? "PUT" : "POST";
+
+  apiCall(url, method, data)
+    .then(() => {
+      bootstrap.Modal.getInstance(
+        document.getElementById("clientModal")
+      ).hide();
+      showAlert("Client saved successfully.");
+      loadClients();
+    })
+    .catch((err) => {
+      showAlert("Failed to save client: " + err.message, "danger");
+    });
+}
+
+function deleteClient(clientId) {
+  if (!confirm("Are you sure you want to delete this client?")) return;
+  apiCall(`/api/clients/${clientId}`, "DELETE")
+    .then(() => {
+      showAlert("Client deleted successfully.");
+      loadClients();
+    })
+    .catch((err) => {
+      showAlert("Failed to delete client: " + err.message, "danger");
     });
 }
 
