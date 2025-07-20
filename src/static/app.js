@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.26
+v1.27
 
 Comments:
-- Fixed API client payload to use correct key 'google_account_email'.
+- Fixed Edit button issue by aligning property to 'google_account_email' throughout client row rendering.
 */
 
 let currentClients = [];
@@ -75,7 +75,7 @@ function loadClients() {
           row.innerHTML = `
             <td>${client.name}</td>
             <td>${client.email}</td>
-            <td>${client.google_email}</td>
+            <td>${client.google_account_email}</td>
             <td>
               <button class="btn btn-sm btn-primary" onclick="editClient('${client.id}')">Edit</button>
               <button class="btn btn-sm btn-danger" onclick="deleteClient('${client.id}')">Delete</button>
@@ -105,7 +105,8 @@ function editClient(clientId) {
   document.getElementById("clientId").value = client.id;
   document.getElementById("clientName").value = client.name;
   document.getElementById("clientEmail").value = client.email;
-  document.getElementById("googleAccountEmail").value = client.google_email;
+  document.getElementById("googleAccountEmail").value =
+    client.google_account_email;
   document.getElementById("clientModalTitle").textContent = "Edit Client";
   new bootstrap.Modal(document.getElementById("clientModal")).show();
 }
