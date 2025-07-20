@@ -201,7 +201,8 @@ function saveOAuthCredentials() {
     return;
   }
 
-  const data = { client_id, google_client_id, google_client_secret };
+  const scopes = document.getElementById("oauthScopes").value;
+  const data = { client_id, google_client_id, google_client_secret, scopes };
   console.log("OAuth Save Payload:", data);
   const url = id ? `/api/oauth/${id}` : "/api/oauth";
   const method = id ? "PUT" : "POST";
