@@ -11,15 +11,16 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-20-07-2025
+21-07-2025
 
 Version:
-v1.13
+v1.14
 
 Comments:
 - Enhanced callback to persist refresh_token and expires_at
 - Added validation toggle and optional debug logging
 - ✅ Now correctly saves tokens to the DB
+- 🚀 Added POST route to save OAuthCredential entries from frontend modal
 """
 
 import sys
@@ -27,9 +28,10 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from flask import Blueprint, redirect, request, url_for, session
+from flask import Blueprint, redirect, request, url_for, session, render_template
 from google_auth_oauthlib.flow import Flow
 from src.models.oauth_credential import OAuthCredential
+from src.models.client import Client
 from src.extensions import db
 
 import pathlib
@@ -119,3 +121,28 @@ def callback():
         return f"OAuth callback failed: {e}", 500
 
     return redirect("/")
+
+
+@oauth_flow_bp.route("/oauth-settings", methods=["POST"])
+def save_oauth_credentials():
+    try:
+        data = request.form
+
+        new_cred = OAuthCredential(
+            client_id=data.get("client_id"),
+            google_client_id=data.get("google_client_id"),
+            google_client_secret=data.get("google_client_secret"),
+            google_redirect_uri="http://localhost:5000/callback",
+            scopes=data.get("scopes"),
+            is_valid=False,
+        )
+
+        db.session.add(new_cred)
+        db.session.commit()
+
+        print(f"[OAuth] ✅ Saved new credentials for client {new_cred.client_id}")
+        return redirect("/oauth-settings")
+
+    except Exception as e:
+        print(f"[OAuth] ❌ Failed to save credentials: {e}")
+        return f"Error saving credentials: {e}", 500
