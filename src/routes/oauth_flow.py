@@ -14,11 +14,12 @@ Last Modified Date:
 20-07-2025
 
 Version:
-v1.12
+v1.13
 
 Comments:
 - Enhanced callback to persist refresh_token and expires_at
 - Added validation toggle and optional debug logging
+- ✅ Now correctly saves tokens to the DB
 """
 
 import sys
@@ -100,17 +101,21 @@ def callback():
     )
     flow.redirect_uri = oauth_entry.google_redirect_uri
 
-    flow.fetch_token(authorization_response=request.url)
+    try:
+        flow.fetch_token(authorization_response=request.url)
+        credentials = flow.credentials
 
-    credentials = flow.credentials
-    oauth_entry.access_token = credentials.token
-    oauth_entry.refresh_token = credentials.refresh_token
-    oauth_entry.expires_at = credentials.expiry
-    oauth_entry.is_valid = True
+        oauth_entry.access_token = credentials.token
+        oauth_entry.refresh_token = credentials.refresh_token
+        oauth_entry.expires_at = credentials.expiry
+        oauth_entry.is_valid = True
 
-    db.session.commit()
+        db.session.commit()
 
-    print(f"[OAuth] Token stored for OAuth ID {oauth_id}")
+        print(f"[OAuth] ✅ Token stored for OAuth ID {oauth_id}")
 
-    # Redirect back to the client list UI
+    except Exception as e:
+        print(f"[OAuth] ❌ Error fetching token: {e}")
+        return f"OAuth callback failed: {e}", 500
+
     return redirect("/")
