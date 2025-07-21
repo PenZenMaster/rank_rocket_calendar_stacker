@@ -11,13 +11,14 @@ Created Date:
 14-07-2025
 
 Last Modified Date:
-22-07-2025
+20-07-2025
 
 Version:
-v1.11
+v1.12
 
 Comments:
-- Redirect to '/' after successful OAuth callback so client list is displayed in the UI
+- Enhanced callback to persist refresh_token and expires_at
+- Added validation toggle and optional debug logging
 """
 
 import sys
@@ -39,33 +40,35 @@ oauth_flow_bp = Blueprint("oauth_flow_bp", __name__)
 
 @oauth_flow_bp.route("/authorize/<int:oauth_id>")
 def authorize(oauth_id):
-    oauth_entry = db.session.get(OAuthCredential, oauth_id)
-    if not oauth_entry:
-        return "OAuth credentials not found", 404
+    """Redirect user to Google's OAuth 2.0 authorization page."""
+    oauth_entry = OAuthCredential.query.get_or_404(oauth_id)
 
     client_config = {
         "web": {
             "client_id": oauth_entry.google_client_id,
             "client_secret": oauth_entry.google_client_secret,
-            "redirect_uris": [oauth_entry.google_redirect_uri],
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
+            "redirect_uris": [oauth_entry.google_redirect_uri],
         }
     }
 
+    scopes = oauth_entry.scopes.splitlines()
+
     flow = Flow.from_client_config(
         client_config=client_config,
-        scopes=["https://www.googleapis.com/auth/calendar"],
+        scopes=scopes,
         redirect_uri=oauth_entry.google_redirect_uri,
     )
 
     authorization_url, state = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true"
+        access_type="offline", include_granted_scopes="true", prompt="consent"
     )
 
     session["state"] = state
     session["oauth_id"] = oauth_id
 
+    print("Redirecting to Google:", authorization_url)
     return redirect(authorization_url)
 
 
@@ -92,7 +95,7 @@ def callback():
 
     flow = Flow.from_client_config(
         client_config=client_config,
-        scopes=["https://www.googleapis.com/auth/calendar"],
+        scopes=oauth_entry.scopes.splitlines(),
         state=state,
     )
     flow.redirect_uri = oauth_entry.google_redirect_uri
@@ -101,7 +104,13 @@ def callback():
 
     credentials = flow.credentials
     oauth_entry.access_token = credentials.token
+    oauth_entry.refresh_token = credentials.refresh_token
+    oauth_entry.expires_at = credentials.expiry
+    oauth_entry.is_valid = True
+
     db.session.commit()
+
+    print(f"[OAuth] Token stored for OAuth ID {oauth_id}")
 
     # Redirect back to the client list UI
     return redirect("/")

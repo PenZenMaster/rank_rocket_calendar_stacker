@@ -14,10 +14,10 @@ Last Modified Date:
 07-20-2025
 
 Version:
-v1.45
+v1.46
 
 Comments:
-- Redirects browser to Google's OAuth flow instead of opening a new tab
+- Replaced conditional redirect to Google's OAuth flow via response.auth_url with direct route-based redirect using response.id
 */
 
 let currentClients = [];
@@ -150,8 +150,8 @@ function saveOAuthCredentials() {
     .then((response) => {
       bootstrap.Modal.getInstance(document.getElementById("oauthModal")).hide();
       showAlert("OAuth credentials saved successfully.");
-      if (response.auth_url) {
-        window.location.href = response.auth_url;
+      if (response.id) {
+        window.location.href = `/authorize/${response.id}`;
       }
     })
     .catch((err) => {
