@@ -14,13 +14,15 @@ Last Modified Date:
 21-07-2025
 
 Version:
-v1.14
+v1.15
 
 Comments:
 - Enhanced callback to persist refresh_token and expires_at
 - Added validation toggle and optional debug logging
 - ✅ Now correctly saves tokens to the DB
 - 🚀 Added POST route to save OAuthCredential entries from frontend modal
+- 🧠 Now redirects directly into OAuth flow after saving credentials
+- 🔍 Added logging of incoming POST data and values used to debug broken redirect case
 """
 
 import sys
@@ -128,6 +130,10 @@ def save_oauth_credentials():
     try:
         data = request.form
 
+        print("[OAuth] 📩 Incoming OAuth Credential POST:")
+        for k, v in data.items():
+            print(f"  {k}: {v}")
+
         new_cred = OAuthCredential(
             client_id=data.get("client_id"),
             google_client_id=data.get("google_client_id"),
@@ -141,7 +147,9 @@ def save_oauth_credentials():
         db.session.commit()
 
         print(f"[OAuth] ✅ Saved new credentials for client {new_cred.client_id}")
-        return redirect("/oauth-settings")
+        print(f"[OAuth] 🔀 Redirecting to /authorize/{new_cred.id}")
+
+        return redirect(f"/authorize/{new_cred.id}")
 
     except Exception as e:
         print(f"[OAuth] ❌ Failed to save credentials: {e}")
